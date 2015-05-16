@@ -1,0 +1,134 @@
+// Migracion de paises desde bendita
+INSERT INTO countries(id,`name`) SELECT id,pais FROM `bendita`.`paises`;
+
+// Migracion de videos desde bendita
+INSERT INTO videos(`name`,label,link,`status`,created_at,updated_at) SELECT `name`,label,link,`status`,CURDATE(),CURDATE() FROM `bendita`.`videos`;
+
+// Migracion de items del carrusel
+INSERT INTO carrousels(pic,title,linkable,link,category_id,`order`,`status`,created_at,updated_at) SELECT pic,title,linkable,link,categorie as category_id,`order`,active as `status`,`timestamp` as created_at,`timestamp` as updated_at FROM `bendita`.`slider`;
+
+// Migracion de reportes de notificacion de bendita
+INSERT INTO emails_reports(full_name,email,`status`,order_id,email_doc,created_at,updated_at) SELECT full_name,email,estatus as `status`,order_number as order_id,email_doc,`timestamp` as created_at,`timestamp` as updated_at FROM `bendita`.`notificaciones_reporte`;
+
+// Depuracion de usuarioa
+DELETE FROM bendita.users WHERE email=''; 
+DELETE FROM bendita.users WHERE email='AillsDutt@host15.ru'
+DELETE FROM bendita.users WHERE email='andres_29leo@hotmail.con'
+DELETE FROM bendita.users WHERE email='angelblanco_3015@hotmail.com'
+DELETE FROM bendita.users WHERE email='betmon_24@hotmail.com'
+DELETE FROM bendita.users WHERE email='chaparra_ek0607@hotmail.com'
+DELETE FROM bendita.users WHERE email='cp_crazy16@hotmail.com'
+DELETE FROM bendita.users WHERE email='daniel@avi-to-ipod.com'
+DELETE FROM bendita.users WHERE email='daxi756cool@gmail.com'
+DELETE FROM bendita.users WHERE email='daxipower@gmail.com'
+DELETE FROM bendita.users WHERE email='fuhj.goo@gmail.com'
+DELETE FROM bendita.users WHERE email='fuhjyyupo@gmail.com'
+DELETE FROM bendita.users WHERE email='jenniferjaimes0@gmail.com'
+DELETE FROM bendita.users WHERE email='john@hotmail.com'
+DELETE FROM bendita.users WHERE id=612
+DELETE FROM bendita.users WHERE email='ning14swss@yandex.ru'
+delete from bendita.users where email='rosy_0107@hotmail.com';
+
+// Migracion de usuarios de bendita
+INSERT INTO `bendita_catalyst`.`users` (`id`,`gender`,`name`,`first_name`,`last_name`,`birthday`,`address`,`suburb`,`postal_code`,`city`,`state_id`,`country_id`,`company`,`email`,`lada`,`phone`,`interest_id`,`password`,`password_recovery`,`affiliate_code`,`users_level_id`,`users_type_id`,`currency`,`activation`,`df_razon_social`,`df_rfc`,`df_tipo`,`df_direccion`,`df_cp`,`df_colonia`,`df_ciudad`,`df_state_id`,`df_country_id`,`de_direccion`,`de_colonia`,`de_ciudad`,`de_state_id`,`de_country_id`,`de_cp`,`status`,`web_service_client_id`,`deleted`,`created_at`,`updated_at`)
+SELECT `id`,`gender`,`nombre` as `name`,`apellido_paterno` as `first_name`,`apellido_materno` as `last_name`,`fecha_de_nacimiento` as `birthday`,`direccion` as `address`,`colonia` as `suburb`,`codigo_postal` as `postal_code`,`ciudad` as `city`,`estado` as `state_id`,`paises_id`,`compania` as `company`,`email`,`lada`,`telefono` as `phone`,`interes` as `interest_id`,`password`,`password_recovery`,`afiliate_code` as `affiliate_code`,`level` as `users_level_id`,`tipo` as `users_type_id`,`currency`,`activacion`,`df_razon_social`,`df_rfc`,`df_tipo`,`df_direccion`,`df_cp`,`df_colonia`,`df_ciudad`,IFNULL(`df_estado_id`,0) as `df_state_id`,IFNULL(`df_pais_id`,0) as `df_country_id`,`de_direccion`,`de_colonia`,`de_ciudad`,IFNULL(`de_estado_id`,0) as `de_state_id`,IFNULL(`de_pais_id`,0) as `de_country_id`,`de_cp`,`estatus` as `status`,`ws_client_id` as `web_service_client_id`,`deleted`,`timestamp` as `created_at`,`timestamp` as `updated_at` FROM `bendita`.`users`
+
+// Migracion de estados
+INSERT INTO states(id,`name`) SELECT state_id as id,`name` FROM `bendita`.`states`;
+
+
+// Migracion de sub categorias de bendita
+INSERT INTO bendita_catalyst.sub_categories(id,category_id,`name`,tag,description,`order`,`status`) SELECT id,categories_id as category_id,`name`,tag,description,`order`,`status` FROM bendita.products_categories_subs
+
+
+// Migracion de productos
+INSERT INTO `products` (`id`,`category_id`,`sub_category_id`,`code`,`price_public`,`price_public_usd`,`price_half_wholesale`,`price_half_wholesale_usd`,`price_wholesale`,`price_wholesale_usd`,`price_dealer`,`price_dealer_us`,`description`,`description_en`,`detail`,`detail_en`,`gender`,`stock`,`minimal_stock`,`status`,`created_at`,`updated_at`)
+SELECT id,categories_id as `category_id`,sub_categories_id as `sub_category_id`,`code`,price_public,price_public_dls as price_public_usd,price_half_wholesale,price_half_wholesale_dls as price_half_wholesale_usd,price_wholesale,price_wholesale_dls as price_wholesale_usd,price_dealer,price_dealer_dls as price_dealer_usd,description,description_en,detalle as detail,detalle_en as detail_en,gender,stock,0 as minimal_stock,`status`,`timestamp` as created_at,`timestamp` as updated_at FROM bendita.products;
+
+
+// Migracion de sub categorias anidadas
+// NOTA limpiar dulicados
+INSERT INTO `product_sub_category` (`product_id`,`sub_category_id`)
+SELECT products_id as product_id,products_categories_subs_id as sub_category_id FROM bendita.products_categories_subs_matrix order by products_id;
+
+// Migramos los materiales de bendita
+INSERT INTO `bendita_catalyst`.`materials` (`id`,`name`,`image`,`created_at`,`updated_at`)
+SELECT id,nombre as `name`,imagen as image,CURDATE() AS created_at,CURDATE() AS updated_at FROM bendita.products_materiales;
+
+// Limpiamos las relaciones de materiales en 0
+delete from bendita.products_matrix_materiales where products_id=0
+
+// Migramios relaciones de productos y materiales
+INSERT INTO `bendita_catalyst`.`material_product` (`material_id`,`product_id`,`created_at`,`updated_at`)
+SELECT products_materiales_id as material_id,products_id as product_id,CURDATE() as created_at,CURDATE() as updated_at FROM bendita.products_matrix_materiales;
+
+// Limpiamos las imagenes de productos
+delete from bendita.products_pictures where products_id=0
+
+// Migramos las imagenes de bendita
+INSERT INTO `bendita_catalyst`.`images` (`product_id`,`full`,`catalog`,`fb_share`,`thumbnail`,`created_at`,`updated_at`)
+SELECT products_id as product_id,`full`,catalog,facebook_share as fb_share,tumbail as thumbnail,CURDATE() as created_at,CURDATE() as updated_at FROM bendita.products_pictures;
+
+// Migramos las imagenes matrix de bendita
+INSERT INTO `bendita_catalyst`.`galeries` (`product_id`,`image`,`image_small`,`image_tag`,`created_at`,`updated_at`)
+SELECT products_id as product_id,image,image_small,image_tag,CURDATE() as created_at,CURDATE() as updated_at FROM bendita.products_matrix_images;
+
+// Migramos las tallas
+INSERT INTO `bendita_catalyst`.`product_size` (`product_id`,`size_id`)
+SELECT products_id as product_id,products_tallas_id as size_id FROM bendita.products_matrix_tallas;
+
+// Depuramos relacion entre productos
+delete FROM bendita.products_relationals where products_id=0 or relational_products_id=0;
+
+// Migramos la  relacion de productos
+INSERT INTO `bendita_catalyst`.`product_product` (`product_id`,`relational_product_id`)
+SELECT products_id as product_id,relational_products_id as relational_product_id FROM bendita.products_relationals;
+
+// Migracion de cuentas sociales
+INSERT INTO `bendita_catalyst`.`socials` (`tag`,`link`,`alias`,`created_at`,`updated_at`)
+SELECT tag,link,alone as alias,curdate() as created_at,curdate() as updated_at FROM bendita.social_accounts;
+
+// Depuracion de ordenes
+DELETE FROM bendita.users_orders where users_id=0;
+
+// Migracion de ordenes de bendita
+INSERT INTO `bendita_catalyst`.`orders` (`id`,`user_id`,`admin_id`,`note`,`shipping_cost`,`parcel_id`,`parcel_number`,`payment_type_id`,`payment_detail`,`status_id`,`payed`,`created_at`,`updated_at`)
+SELECT id,users_id as user_id,change_by_id as admin_id,notes as note,shipping_cost,orders_parcels_id as parcel_id,orders_parcels_number as parcel_number,users_orders_payment_types_id as payment_type_id,payment_detail,order_status_id as status_id,payed,incoming as created_at,`change` as updated_at FROM bendita.users_orders order by id;
+
+// Depuramos los items de ordenes vacios
+DELETE FROM bendita.users_orders_items where product_id=0;
+
+// Migramos los items de bendita
+INSERT INTO `bendita_catalyst`.`items` (`id`,`product_id`,`price`,`quanty`,`total`,`languaje`,`currency`,`exchange_rate`,`done`,`created_at`,`updated_at`)
+SELECT id,product_id,price,quanty,total,lang as languaje,currency,11 as exchange_rate,done,curdate() as created_at,curdate() as updated_at FROM bendita.users_orders_items;
+
+// Arreglamos discrepancias
+UPDATE bendita_catalyst.items SET languaje='en',currency='USD' WHERE languaje='' AND currency=''
+
+// Correccion de relaciones entre ordenes e items de bendita
+INSERT INTO `bendita_catalyst`.`item_order` (`item_id`,`order_id`,`created_at`,`updated_at`) SELECT id as item_id,users_orders_id,curdate() as created_at,curdate() as updated_at FROM bendita.users_orders_items
+
+// Importamos las notas de las ordenes en bendita
+INSERT INTO `bendita_catalyst`.`notes` (`user_id`,`order_id`,`text`,`created_at`,`updated_at`)
+SELECT users_id as user_id,users_orders_id as order_id,reply as `text`,`timestamp` as created_at,`timestamp` updated_at FROM bendita.users_orders_notes;
+
+// Se agrega campo id a la tabla de carritos virtuales
+ALTER TABLE `bendita`.`users_virtual_basket` 
+ADD COLUMN `id` INT(10) NOT NULL AUTO_INCREMENT FIRST,
+ADD PRIMARY KEY (`id`);
+
+// Migramos los carritos de bendita
+INSERT INTO `bendita_catalyst`.`carts` (`id`,`user_id`,`product_id`,`code`,`description`,`type_id`,`price`,`quanty`,`total`,`languaje`,`currency`,`exchange_rate`,`created_at`,`updated_at`)
+SELECT id,users_id as user_id,products_id as product_id,products_code as `code`,products_desc as description,users_type as type_id,price,quanty,total,lang as languaje,currency,11 as exchange_rate,`timestamp` as created_at,`timestamp` as updated_at FROM bendita.users_virtual_basket;
+
+// Fix de lenguaje y moneda
+UPDATE bendita_catalyst.carts SET languaje='en',currency='USD' WHERE languaje='' AND currency=''
+UPDATE bendita_catalyst.carts SET languaje='en',currency='USD' WHERE currency=''
+
+// Se genera tabla pivote de carts y usuario
+INSERT INTO `bendita_catalyst`.`cart_user` (`cart_id`,`user_id`)
+SELECT id as cart_id,users_id as user_id FROM bendita.users_virtual_basket;
+
+// Migracion de links
+INSERT INTO `bendita_catalyst`.`links` (`product_id`,`url`)
+SELECT products_id as product_id,products_alias as url FROM bendita.products_friend_index;
