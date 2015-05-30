@@ -15,9 +15,36 @@
 Route::get('/test', function()
 {
 
-    $user = Product::with(array('category','sub_category'))->get();
+    //$categories = Category::with(array('subs' => function($query){ $query->orderBy('order', 'ASC'); }))->get();
 
-    return $user;
+    //return Input::all();//$categories;
+    //$site_config = ProductProduct::where('product_id',672)->get();
+    //return $site_config->count();
+    
+    // $pid = 1437;
+    // $rel_products = ProductProduct::where('product_id',$pid)->get();
+
+    // if($rel_products->count() > 0) {
+    //     $ids_to_delete = array();
+    //     foreach ($rel_products as $r) {
+    //         array_push($ids_to_delete, $r->id);
+    //     }
+    //     ProductProduct::destroy($ids_to_delete);
+    // }
+
+    // return "Done";
+    
+    //$pp = Product::find(1430);
+    //$pp->link_colors()->sync(array(20,21));
+
+    $p = Product::with(array('link_colors' => function($query) { $query->with('Color', 'Product'); }))->where('id', 1443)->get();
+    return $p;
+});
+
+// Test
+Route::post('/test', function()
+{
+    return Input::all();
 });
 
 
@@ -213,6 +240,33 @@ Route::group(array('before' => 'auth.cp'), function()
 
         // Obtenemos informacion de un articulo
         Route::post('products/inventory/item/info', 'InventoryController@itemInfo');
+
+        // Buscamos si existe un codigo
+        Route::post('products/code/search', 'InventoryController@codeSearch');
+
+        // Cargamos el listado de categoria disponibles
+        Route::post('products/category/load', 'InventoryController@categoryLoad');
+
+        // Cargamos el listado de sub-categoria disponibles
+        Route::post('products/sub_categories/load', 'InventoryController@subCategoriesLoad');
+
+        // Cargamos el listado de multi categoria disponibles
+        Route::post('products/complex_categories/load', 'InventoryController@complexCategoriesLoad');
+
+        // Cargamos el listado materiales
+        Route::post('products/materials/load', 'InventoryController@materialsLoad');
+
+        // Cargamos el listado de tallas
+        Route::post('products/sizes/load', 'InventoryController@sizesLoad');
+
+        // Cargamos el listado colores
+        Route::post('products/colors/load', 'InventoryController@colorsLoad');
+
+        // Agregamos un producto nuevo
+        Route::post('products/inventory/add', 'InventoryController@productAdd');
+
+        // Obtenemos el tipo de cambio
+        Route::post('products/inventory/type_change', 'InventoryController@typeCgange');
 });
 
 // Printables

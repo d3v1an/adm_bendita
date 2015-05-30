@@ -46,10 +46,38 @@ Log::useFiles(storage_path().'/logs/laravel.log');
 |
 */
 
+/*
+App::missing(function($exception)
+{
+    return Response::json('mamalon', 404);
+});
+
 App::error(function(Exception $exception, $code)
 {
 	Log::error($exception);
+
+    $headers = ['App' => 'Eyemusememe'];
+
+	switch ($code)
+    {
+
+        //case 401:
+        //    return Response::view('errors.403', array(), 401);
+
+        //case 403:
+        //    return Response::view('errors.403', array(), 403);
+
+        case 404:
+            return Response::json('Unauthorized', 404, $headers);
+
+        case 500:
+            return Response::json('Internal error', 500, $headers);
+
+        default:
+            return Response::json('Unknow error', $code, $headers);
+    }
 });
+*/
 
 /*
 |--------------------------------------------------------------------------

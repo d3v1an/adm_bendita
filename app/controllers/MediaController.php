@@ -521,6 +521,14 @@ class MediaController extends \BaseController {
 	// Funcion para cargar la imagen principal del producto
 	public function imageUpload()
 	{
+
+		$file = Input::file('file');
+		$extension = File::extension($file->getClientOriginalName());
+	    $directory = public_path() .'/tmp/';
+	    $filename =  $file->getClientOriginalName().'_' . md5($file->getClientOriginalName()) . '.'.$extension;
+
+	    $upload_success = Input::file('file')->move($directory, $filename);
+
 		return Input::all();
 	}
 

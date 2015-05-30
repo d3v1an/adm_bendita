@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 
-class CreateMaterialProductTable extends Migration {
+class CreatePcolorProductTable extends Migration {
 
 	/**
 	 * Run the migrations.
@@ -12,10 +12,10 @@ class CreateMaterialProductTable extends Migration {
 	 */
 	public function up()
 	{
-		Schema::create('material_product', function(Blueprint $table)
+		Schema::create('pcolor_product', function(Blueprint $table)
 		{
 			$table->increments('id');
-			$table->integer('material_id')->unsigned()->index();
+			$table->integer('pcolor_id')->unsigned()->index();
 			$table->integer('product_id')->unsigned()->index();
 		});
 	}
@@ -28,7 +28,7 @@ class CreateMaterialProductTable extends Migration {
 	 */
 	public function down()
 	{
-		Schema::drop('material_product');
+		Schema::drop('pcolor_product');
 	}
 
 }

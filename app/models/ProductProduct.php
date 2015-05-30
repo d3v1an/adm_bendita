@@ -2,7 +2,8 @@
 
 class ProductProduct extends \Eloquent {
 	protected $fillable = [];
-	protected $table = 'product_product';
+	protected $table 	= 'product_product';
+	public $timestamps 	= false;
 
 	// Relacion de categoria
     public function product()

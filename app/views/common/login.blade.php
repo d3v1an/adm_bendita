@@ -50,13 +50,9 @@
         <script type="text/javascript">var base_path="{{ URL::to("/") }}";</script>
     </head>
     <body>
-        <!-- Login Full Background -->
-        <!-- For best results use an image with a resolution of 1280x1280 pixels (prefer a blurred image for smaller file size) -->
-        <img src="{{ asset('img/placeholders/backgrounds/bg_login6.jpg') }}" alt="Inicio de sesion" class="full-bg"><!--  animation-pulseSlow -->
-        <!-- END Login Full Background -->
 
         <!-- Login Container -->
-        <div id="login-container" class="animation-fadeIn">
+        <div id="login-container">
             <!-- Login Title -->
             <div class="login-title text-center">
                 <h1><i class="gi gi-cloud"></i> <strong>Bendita Tentacion</strong><br><small>Por favor <strong>inicie sesión</strong></small></h1>

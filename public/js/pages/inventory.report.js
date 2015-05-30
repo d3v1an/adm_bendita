@@ -2,7 +2,31 @@ var InventoryReportData = function() {
 
  	return {
 
+ 		load: function() {
+
+ 			var categories = $("#categories", "#form-detail");
+ 			$.loadCategories(categories, undefined, true);
+
+ 			var complex_categories = $("#multi-sub-categories", "#form-detail");
+ 			$.loadComplexCategories(complex_categories);
+
+ 			var materials = $("#materials", "#form-extras");
+ 			$.loadMaterials(materials);
+
+ 			var sizes = $("#sizes", "#form-extras");
+ 			$.loadSizes(sizes);
+
+ 			var colors = $("#colors", "#form-extras");
+ 			$.loadColors(colors);
+ 		},
+
  		init: function() {
+
+ 			var _type_change = 0;
+
+ 			$.d3POST('/products/inventory/type_change',{},function(data){
+				if(data.status==true) _type_change = data.exchange;
+			});
 
  			// Inicializacion de dataTables
  			App.datatables();
@@ -305,20 +329,28 @@ var InventoryReportData = function() {
 	        // Dropzone
 
 	        // Disable auto discover for all elements:
-    		Dropzone.autoDiscover = false;
+    		Dropzone.autoDiscover	= false;
+    		var dropLimit 			= 7;
 
-    		var previewNode = document.querySelector("#template");
-			previewNode.id = "";
-			var previewTemplate = previewNode.parentNode.innerHTML;
+    		var previewNode 		= document.querySelector("#template");
+			previewNode.id 			= "";
+			var previewTemplate 	= previewNode.parentNode.innerHTML;
 			previewNode.parentNode.removeChild(previewNode);
 
-    		var _dz = new Dropzone("div#dropzone",{
-		    //var _dz = $("div#dropzone").dropzone({
+			// Listado de imagenes a cargar y su configuracion adicional
+			var imgToUpList 		= [];
+			var imgToUpObjs 		= [];
+			var mainImgName			= null;
+			var itemLinkId 			= 0;
+			var btnImgObject		= undefined;
+
+    		var _dz = new Dropzone("div#dropzone",{ // Configuracion inicial de dropzone
 		        url: "/media/image/upload",
 		        dictDefaultMessage: '<i class="fa fa-cloud-upload"></i><p><span>Arrastra tu imagen ó da click.</span></p>',
 		        autoProcessQueue: false,
 		        uploadMultiple: false,
-		        maxFiles: 7,
+		        parallelUploads: dropLimit, 
+		        maxFiles: dropLimit,
 		        maxFilesize: 15, // 5MB
 		        
 		        thumbnailWidth:150,
@@ -331,8 +363,7 @@ var InventoryReportData = function() {
 		        acceptedFiles: 'image/jpeg,image/jpg',
 		        dictInvalidFileType: 'uf:Archivo no soportado',
 
-		        maxfilesexceeded: function(file) {
-		            // displayNotification('error', 'Ha superado el número máximo de imágenes a cargar.', 4000);
+		        maxfilesexceeded: function(file) { // Si se excede el numero de archivos se remueven los que esten agregados de mas de la dropzone
 		            $.bootstrapGrowl('Ha superado el número máximo de imágenes a cargar.', {
                         type: "danger",
                         delay: 4500,
@@ -340,11 +371,10 @@ var InventoryReportData = function() {
                     });
 		            this.removeFile(file);
 		        },
-		        error: function(file, response) {
+		        error: function(file, response) { // SI existe un error este los mostramos
 		            if($.type(response) === "string") {
 		                var err = response.split(':');
 		                if(err[0]=='tb') {
-		                    // displayNotification('error', file.name + ' ' + err[1], 4000);
 		                    $.bootstrapGrowl(file.name + ' ' + err[1], {
 		                        type: "danger",
 		                        delay: 4500,
@@ -352,28 +382,124 @@ var InventoryReportData = function() {
 		                    });
 		                    this.removeFile(file);
 		                } else if(err[0]=='uf') {
-		                    // displayNotification('error', file.name + ' ' + err[1], 4000);
 		                    $.bootstrapGrowl(file.name + ' ' + err[1], {
 		                        type: "danger",
 		                        delay: 4500,
 		                        allow_dismiss: true
 		                    });
 		                    this.removeFile(file);
-		                }// else console.log(response);
+		                }
 		            }
 		        },
-		        sending: function(file) {
-		            console.log('Cargando archivo al servidor');
-		            //$('#dropzone').fadeOut('fast').slideUp('fast');
-		            //$('.fileprogress').fadeIn('fast').slideDown('slow');
+		        sending: function(file, xhr, formData) { // Se agrega informacion adicional a la carga de imagenes
+
+		        	var itmHash = CryptoJS.MD5(file.name).toString();
+		        	var isMain 	= false;
+
+		        	$.each(imgToUpObjs, function(i, itm) {
+						if(itm.hash == itmHash) isMain = itm.isMain;
+					});
+
+		        	formData.append('name', file.name);
+		        	formData.append('hash', itmHash);
+		        	formData.append('is_main', isMain);
+
 		        },
-		        uploadprogress: function(file, progress, bytesSent) {
-		            //$('.upprogress').css('width', progress+'%').html('<i class="fa fa-circle-o-notch fa-spin"></i> ' + Math.round(progress) + '% Cargado..');
-		            console.log(progress);
-		            console.log(bytesSent);
+		        accept: function(file, done) { // Si la imagen es acpetable se configura la  previsualizacion y sus botones
+
+		        	done();
+
+		        	var preview = $(file.previewTemplate);
+
+		        	var _qfiles = this.getQueuedFiles();
+
+		        	var _this 	= this;
+
+		        	$.each(_qfiles, function(i, item) {
+
+		        		var itmName = CryptoJS.MD5(item.name).toString();
+		        		var imgData = {  "name" : item.name , "hash" : itmName, 'isMain' : false };
+
+		        		if($.inArray(itmName, imgToUpList)==-1) {
+
+		        			imgToUpObjs.push(imgData);
+		        			imgToUpList.push(itmName);
+
+		        			var btn_pic 		= preview.find('.btn-pic');
+		        			var btn_del 		= preview.find('.btn-del');
+		        			var obj_progress	= preview.find('.progress-object');
+
+		        			// Boton de imagen principal
+		        			btn_pic.data('cimg', itmName);
+		        			btn_pic.data('img', item.name);
+
+		        			btn_pic.on('click', function(e){
+
+		        				mainImgName = $(this).data('cimg');
+
+	        					$(this).removeClass('btn-success');
+	        					$(this).addClass('btn-danger');
+
+	        					if(btnImgObject==undefined) btnImgObject = btn_pic;
+	        					else {
+
+	        						btnImgObject.removeClass('btn-danger');
+	        						btnImgObject.addClass('btn-success');
+
+	        						btnImgObject = btn_pic;
+	        					}
+
+	        					$.each(imgToUpObjs, function(i, itm) {
+	        						if(itm.hash == mainImgName) itm.isMain = true;
+	        						else itm.isMain = false;
+	        					});
+
+	        					obj_progress.prop('id', '_p_' + itmName);
+
+		        				e.preventDefault();
+		        				e.stopPropagation();
+		        			});
+
+		        			// Boton de imagen a eliminar
+		        			btn_del.data('cimg', itmName);
+		        			btn_del.data('img', item.name);
+
+		        			btn_del.on('click', function(e){
+
+		        				var imgHash = $(this).data('cimg');
+
+		        				if(mainImgName == imgHash) {
+		        					$.bootstrapGrowl('La imagen principal no puede ser eliminada', {
+				                        type: "danger",
+				                        delay: 4500,
+				                        allow_dismiss: true
+				                    });
+		        					return false;
+		        				}
+
+		        				_this.removeFile(file);
+
+		        				imgToUpList.splice(imgToUpList.indexOf(imgHash), 1);
+
+
+		        				$.each(imgToUpObjs, function(i, oitm) {
+		        					if(oitm.hash == imgHash) {
+		        						imgToUpObjs.splice(imgToUpObjs.indexOf(oitm), 1);
+		        						return false;
+		        					}
+		        				});
+
+		        				e.preventDefault();
+		        				e.stopPropagation();
+		        			});
+		        		}
+
+		        	});
+
 		        },
-		        complete: function(file) {
-		        	console.log(file);
+		        complete: function(file) { // Una ves completada la carga ... [Pendinete]
+		        	//console.log('Completado');
+		        	//console.log(this.getQueuedFiles());
 		        	/*
 		            if(file.status=='error') return false;
 
@@ -426,13 +552,382 @@ var InventoryReportData = function() {
 		        }
 		    });
 
-			// _dz.on("addedfile", function(file) {
-			//   // Hookup the start button
-			//   file.previewElement.querySelector(".start").onclick = function() { _dz.enqueueFile(file); };
-			// });
+			// Detalle
 
+			// Codigo
+			$('#code','#form-detail').on('keypress keyup',function(e){
+				this.value = this.value.toUpperCase();
+			});
+			$('#code','#form-detail').on('focusout',function(e){
+
+				$(this).val().toUpperCase();
+
+				var code 	= $(this).val();
+				
+				$.d3POST('/products/code/search',{code:code},function(data){
+					if(data.status==true) {
+						$.bootstrapGrowl(data.message, {
+	                        type: "danger",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
+	                    $('#code','#form-detail').focus();
+	                    $('#code','#form-detail').select();
+					}
+				});
+
+			});
+
+			// Stock
+			$('#stock','#form-detail').on('keypress keyup',function(e){
+				
+				if(!$.isNumeric($(this).val())) {
+					
+					$.bootstrapGrowl('Solo se admiten numeros', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+
+                    $(this).val(0);
+                    $(this).select();
+
+                    return false;
+				}
+
+				if(parseInt($(this).val()) < 0) {
+					$.bootstrapGrowl('No e admiten numeros negativos', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+				}
+			});
+
+			// Categorias
+			$('#categories','#form-detail').on('change', function(){
+				var sub_categories = $("#sub-categories");
+ 				$.loadSubCategories(sub_categories, $(this).val());
+			});
+
+			// Autocomplete de relations
+            var _form 		= $('#form-relations')
+            var $input 		= $('#code', _form);
+            var _table 		= $('table#relations-datatable');
+
+            var _relList 	= [];
+            var _relObjs	= []; 
+
+            $input.typeahead({
+            	source:function(request, response) {
+
+            		var _state 	= $input.val();
+            		var _term 	= request.term;
+
+					$.d3POST('/customer/orders/detail/item/search',{state:_state, term:_term},function(data){
+						response(data);
+					});
+            	},
+            	autoSelect: true,
+            	minLength: 2,
+            	items:'all',
+            	displayText: function(item) {
+            		$(".btn-search-code").prop('disabled', false);
+            		return item.code + ' (' + item.description + ')';
+            	}
+            });
+
+            $(".btn-search-code").click(function(){
+
+            	var data 	= $input.typeahead("getActive");
+            	var _id 	= data.id;
+            	var _code 	= data.code;
+            	var _desc 	= data.description.trim();
+
+            	if($.inArray(_code, _relList) > -1) {
+            		$.bootstrapGrowl('El articulo ya se encuentra relacionado', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+            		return false;
+            	}
+
+            	var _tr 	= '<tr id="' + _code + '">';
+            		_tr 	+= '	<td class="text-center"><img src="' + url + img_cat + _code + '_tumb.jpg" width="50" height="50" /></td>';
+            		_tr 	+= '	<td>' + _code + '</td>';
+            		_tr 	+= '	<td>' + _desc + '</td>';
+            		_tr 	+= '	<td class="text-center">';
+            		_tr 	+= '		<div class="btn-group">';
+            		_tr 	+= '			<a href="javascript:void(0)" data-toggle="tooltip" title="Eliminar" class="btn btn-xs btn-danger btn-del" id="_a_' + _code + '" data-code="' + _code + '"><i class="fa fa-times"></i></a>';
+            		_tr 	+= '		</div>';
+            		_tr 	+= '	</td>';
+            		_tr 	+= '</tr>';
+
+            	$('tbody', _table).append(_tr);
+
+            	// Acion para eliminar un elemnto relacional
+            	$('tbody tr td div a[id="_a_' + _code + '"]', _table).on('click', function() {
+
+            		var _confirm = confirm('Realmente dese eliminar este articulo de la lista de relaciones?');
+
+            		if(_confirm==true) {
+
+            			var _code = $(this).data('code');
+
+	            		_relList.splice(_relList.indexOf(_code), 1);
+
+	            		$.each(_relObjs, function(i, item) {
+	    					if(item.code == _code) {
+	    						_relObjs.splice(_relObjs.indexOf(item), 1);
+	    						return false;
+	    					}
+	    				});
+
+	    				$('tbody tr[id="' + _code + '"]', _table).remove();
+
+            		}
+
+            	});
+
+            	var relObj = {
+            		'id' 	: _id,
+            		'code'	: _code,
+            		'desc'	: _desc
+            	};
+
+            	_relList.push(_code);
+            	_relObjs.push(relObj);
+
+            	$('#code', '#form-relations').val('');
+            	$(".btn-search-code").prop('disabled', true);
+            });
+
+			// Dialogo para el enlace de colores y links de productos
+			$(".btn-color-link").click(function(){
+
+				var _selected_color = $("#colors option:selected","#form-extras").val();
+
+				if(_selected_color==undefined) {
+					$.bootstrapGrowl('Selecione un color primero', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+
+				$("#modal-link-color").modal('show');
+			});
+
+			// Autocompletado de relacion de colores
+            var _e_form 			= $('#form-link-color')
+            var $e_input 			= $('#code', _e_form);
+
+            var relColorCodeList 	= [];
+            var relColorCodeObjs	= [];
+
+            $e_input.typeahead({
+            	source:function(request, response) {
+
+            		var _state 	= $input.val();
+            		var _term 	= request.term;
+
+					$.d3POST('/customer/orders/detail/item/search',{state:_state, term:_term},function(data){
+						response(data);
+					});
+            	},
+            	autoSelect: true,
+            	minLength: 2,
+            	items:'all',
+            	displayText: function(item) {
+            		return item.code + ' (' + item.description + ')';
+            	}
+            });
+
+            $('.btn-select').click(function(){
+
+            	var data 	= $e_input.typeahead("getActive");
+            	var _id 	= data.id;
+            	var _code 	= data.code;
+            	var _desc 	= data.description.trim();
+            	var _cid 	= $("#colors option:selected","#form-extras").val();
+            	var _ctx 	= $("#colors option:selected","#form-extras").text();
+
+            	if($.inArray(_cid, relColorCodeList) > -1) {
+            		$.bootstrapGrowl('El color y el articulo ya se encuentran relacionados', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+            		return false;
+            	}
+
+            	var relObj = {
+            		'color_id' 	: _cid,
+            		'item_id'	: _id,
+            		'item_code'	: _code,
+            		'item_desc'	: _desc
+            	};
+
+            	var _osel = '<option value="' + _cid + '|' + _id + '">' + _ctx + ' - ' + _code + ' - ' + _desc + '</option>';
+            	$("#link-color","#form-extras").append(_osel);
+            	$("#link-color option","#form-extras").prop('selected', true);
+
+            	relColorCodeList.push(_cid);
+            	relColorCodeObjs.push(relObj);
+
+            	$('#modal-link-color').modal('hide');
+            });
+
+			// Actualizacion de instancias de CKEditor
+			$.CKupdate = function() {
+				for ( instance in CKEDITOR.instances ){
+			        CKEDITOR.instances[instance].updateElement();
+			    }
+			    CKEDITOR.instances[instance].setData('');
+			};
+
+			// Prices
+			$('#price_public, #price_half_wholesale, #price_wholesale, #price_dealer','#form-detail').on('keypress keyup',function(e){
+				
+				if(!$.isNumeric($(this).val())) {
+					
+					$.bootstrapGrowl('Solo se admiten numeros', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+
+                    $(this).val(0);
+                    $(this).select();
+
+                    return false;
+				}
+
+				if(parseInt($(this).val()) < 0) {
+					$.bootstrapGrowl('No e admiten numeros negativos', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+				}
+
+				var usd_price	= (Math.ceil(parseInt($(this).val()) / _type_change));
+				var cur_id 		= $(this).prop('id');
+
+				if(cur_id=='price_public') $('#price_public_usd').val(usd_price);
+				if(cur_id=='price_half_wholesale') $('#price_half_wholesale_usd').val(usd_price);
+				if(cur_id=='price_wholesale') $('#price_wholesale_usd').val(usd_price);
+				if(cur_id=='price_dealer') $('#price_dealer_usd').val(usd_price);
+			});
+
+			// Fix para overmodal
+	        $('#modal-add-product').on('hidden.bs.modal', function(e){
+                $('#form-detail').trigger('reset');
+                $("table#elations-datatable tbody").empty();
+                $('#form-relations').trigger('reset');
+            });
+
+            // Fix para overmodal
+	        $('#modal-link-color').on('hidden.bs.modal', function(e){
+                if($('#modal-add-product').css('display')=='block') {
+                   $('body').addClass('modal-open'); 
+                }
+                $('#form-link-color').trigger('reset');
+            });
+
+			//
+            // Procesamiento de agregado de producto
+            // 
 			$('.btn-upload-product').click(function(e){
-				_dz.processQueue();
+				//console.log(imgToUpObjs);
+				//console.log(_dz.getQueuedFiles());
+				
+				// Actualizamos la informacion de los textareas que usen CKEditor
+				$.CKupdate();
+
+				// Objeto para la informacion del formulario
+				var _formData = new FormData();
+
+				// Informacion de detalle
+				var _d_form 					= $('#form-detail');
+				var _d_code 					= $('#code',_d_form).val();
+				var _d_stock 					= $('#stock',_d_form).val();
+				var _d_title 					= $('#title',_d_form).val();
+				var _d_title_eng 				= $('#title-eng',_d_form).val();
+				var _d_description 				= $('#description',_d_form).val().replace(/(?:\r\n|\r|\n)/g, '');
+				var _d_description_eng 			= $('#description-eng',_d_form).val().replace(/(?:\r\n|\r|\n)/g, '');
+				var _d_category 				= $('#categories',_d_form).val();
+				var _d_sub_category 			= $('#sub-categories',_d_form).val();
+				var _d_multi_category 			= $('#multi-sub-categories',_d_form).val();
+				var _d_price_public 			= $('#price_public',_d_form).val();
+				var _d_price_public_usd 		= $('#price_public_usd',_d_form).val();
+				var _d_price_half_wholesale 	= $('#price_half_wholesale',_d_form).val();
+				var _d_price_half_wholesale_usd = $('#price_half_wholesale_usd',_d_form).val();
+				var _d_price_wholesale 			= $('#price_wholesale',_d_form).val();
+				var _d_price_wholesale_usd 		= $('#price_wholesale_usd',_d_form).val();
+				var _d_price_dealer 			= $('#price_dealer',_d_form).val();
+				var _d_price_dealer_usd 		= $('#price_dealer_usd',_d_form).val();
+				var _d_gender 					= $('#gender',_d_form).val();
+
+				_formData.append('d_code', _d_code);
+				_formData.append('d_stock', _d_stock);
+				_formData.append('d_title', _d_title);
+				_formData.append('d_title_eng', _d_title_eng);
+				_formData.append('d_description', _d_description);
+				_formData.append('d_description_eng', _d_description_eng);
+				_formData.append('d_category_id', _d_category);
+				_formData.append('d_sub_category_id', _d_sub_category);
+				_formData.append('d_multi_category', _d_multi_category);
+				_formData.append('d_price_public', _d_price_public);
+				_formData.append('d_price_public_usd', _d_price_public_usd);
+				_formData.append('d_price_half_wholesale', _d_price_half_wholesale);
+				_formData.append('d_price_half_wholesale_usd', _d_price_half_wholesale_usd);
+				_formData.append('d_price_wholesale', _d_price_wholesale);
+				_formData.append('d_price_wholesale_usd', _d_price_wholesale_usd);
+				_formData.append('d_price_dealer', _d_price_dealer);
+				_formData.append('d_price_dealer_usd', _d_price_dealer_usd);
+				_formData.append('d_gender', _d_gender);
+
+				// Informacion de relaciones de productos
+				var _r_arrays 			= [];
+
+				$.each(_relObjs, function(i, item){
+					_r_arrays.push(item.id);
+				});
+
+				var _r_products 		= _r_arrays.join();
+
+				_formData.append('r_products', _r_products);
+
+				// Formulario de extras
+				var _e_form				= $("#form-extras");
+				var _e_materials 		= $("#materials",_e_form).val();
+				var _e_sizes			= $("#sizes",_e_form).val();
+				var _e_icArray 			= [];
+
+				$.each(relColorCodeObjs, function(i, item){
+					_e_icArray.push(item.color_id+'|'+item.item_id);
+				});
+
+				var _e_prodColorList 	= _e_icArray.join();
+
+				_formData.append('e_materials', _e_materials);
+				_formData.append('e_sizes', _e_sizes);
+				_formData.append('e_item_color', _e_prodColorList);
+
+				// Procesamos la informacion del producto
+				// 
+				// Si la informacion de procesa correctamente tambien llamamos al proceso de carga de imagenes
+				// En este punto el foco se mueve al tab de carga de imagenes
+				// 
+				$.d3pdPOST('/products/inventory/add',_formData,function(data){
+					console.log(data);
+				});
+
+				// Procesamos las imagenes (Paso final)
+				// _dz.processQueue();
 			});
  		}
  	}

@@ -27,9 +27,9 @@ class CreateProductsTable extends Migration {
 			$table->integer('price_dealer', false);
 			$table->integer('price_dealer_usd', false);
 			$table->text('description');
-			$table->text('description_en');
+			$table->text('description_en')->nullable();
 			$table->text('detail');
-			$table->text('detail_en');
+			$table->text('detail_en')->nullable();
 			$table->enum('gender',array('m','f'))->default('f');
 			$table->integer('stock',false)->default(0);
 			$table->integer('minimal_stock',false)->default(0);

@@ -62,4 +62,10 @@ class Product extends \Eloquent {
     {
         return $this->hasOne("Link");
     }
+
+    // Pcolors
+    public function link_colors()
+    {
+        return $this->belongsToMany('Pcolor');
+    }
 }
