@@ -1,0 +1,2 @@
+$(":input", "#form-relations").prop("disabled", true);
+$(":input", "#form-extras").prop("disabled", true);

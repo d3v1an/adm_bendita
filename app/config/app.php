@@ -125,6 +125,7 @@ return array(
 		'anlutro\cURL\Laravel\cURLServiceProvider',
 		'Maatwebsite\Excel\ExcelServiceProvider',
 		'Netson\L4shell\L4shellServiceProvider',
+		'Intervention\Image\ImageServiceProvider',
 
 	),
 
@@ -196,6 +197,7 @@ return array(
 		'Carbon'            => 'Carbon\Carbon',
 		'Excel' 			=> 'Maatwebsite\Excel\Facades\Excel',
 		'L4shell' 			=> 'Netson\L4shell\Facades\Command',
+		'iImage' 			=> 'Intervention\Image\Facades\Image',
 
 	),
 

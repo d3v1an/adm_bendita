@@ -1,4 +1,8 @@
 <?php
+use Kinglozzer\TinyPng\Compressor;
+use Kinglozzer\TinyPng\Exception\AuthorizationException;
+use Kinglozzer\TinyPng\Exception\InputException;
+use Kinglozzer\TinyPng\Exception\LogicException;
 
 class MediaController extends \BaseController {
 
@@ -521,15 +525,141 @@ class MediaController extends \BaseController {
 	// Funcion para cargar la imagen principal del producto
 	public function imageUpload()
 	{
+		// Configuracion de compresion
+		$compress_enabled 	= filter_var(Config::get('compress.enable'), FILTER_VALIDATE_BOOLEAN);
 
-		$file = Input::file('file');
-		$extension = File::extension($file->getClientOriginalName());
-	    $directory = public_path() .'/tmp/';
-	    $filename =  $file->getClientOriginalName().'_' . md5($file->getClientOriginalName()) . '.'.$extension;
+		// Configuracion del producto
+		$code 				= Input::get('code');
+		$pid 				= Input::get('pid');
+		$pcat 				= (int)Input::get('category');
+		$hashName 			= Input::get('hash');
+		$isMain 			= filter_var(Input::get('is_main'), FILTER_VALIDATE_BOOLEAN);
 
-	    $upload_success = Input::file('file')->move($directory, $filename);
+		// Archivo e informacion a cargar
+		$file 				= Input::file('file');
+		$extension 			= File::extension($file->getClientOriginalName());
 
-		return Input::all();
+		// Directorios
+		$temp_dir 			= storage_path() . '/tmp/';
+		$public_dir 		= Config::get('btsite.path') . Config::get('btsite.img_catalog');//public_path() . '/tmp/';
+
+	    if($isMain) {
+	    	
+	    	$tmp_filename 	=  $code . '_tmp.' . $extension;
+	    	$new_filename 	=  $code . '.' . $extension;
+
+	    	$cat_filename 	=  $code . '_cat.' . $extension;
+	    	$thb_filename 	=  $code . '_tumb.' . $extension;
+	    	$fb_filename 	=  $code . '_fb.' . $extension;
+
+	    } else {
+	    	
+	    	$tmp_filename 	=  $code .'_' . $hashName . '_tmp.' . $extension;
+	    	$new_filename 	=  $code .'_' . $hashName . '.' . $extension;
+	    	
+	    	$sml_filename 	=  $code .'_' . $hashName . '_small.' . $extension;
+	    	$tag_filename 	=  $code .'_' . $hashName . '_tag.' . $extension;
+
+	    }
+
+	    $upload_success = Input::file('file')->move($temp_dir, $tmp_filename);
+
+	    if($upload_success) {
+
+	    	$message_output = "";
+
+	    	if($compress_enabled) {
+
+	    		$compressor = new Compressor(Config::get('compress.api_key'));
+
+	    		try {
+			        
+			        // Comprimimos la imagen cuando el compresos esta activado
+			        $result = $compressor->compress($temp_dir . $tmp_filename);
+			        $result->writeTo($public_dir . $new_filename);
+
+			        if($isMain) {
+
+			        	if($pcat==1) iImage::make($public_dir . $new_filename)->resize(190, 285)->save($public_dir . $cat_filename);
+			        	else iImage::make($public_dir . $new_filename)->resize(190, 210)->save($public_dir . $cat_filename);
+
+			        	iImage::make($public_dir . $new_filename)->resize(50, 50)->save($public_dir . $thb_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(100, 100)->save($public_dir . $fb_filename);
+
+			        } else {
+
+			        	iImage::make($public_dir . $new_filename)->resize(100, 150)->save($public_dir . $sml_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(33, 50)->save($public_dir . $tag_filename);
+			        }
+
+			        File::delete($temp_dir . $tmp_filename);
+
+			        $message_output = 'Imagen cargada y comprimida';
+			    }
+			    catch (AuthorizationException $e) {
+			        return Response::json(array('status' => false, 'message' => '[AuthorizationException] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+			    catch (InputException $e) {
+			        return Response::json(array('status' => false, 'message' => '[InputException] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+			    catch (Exception $e) {
+			        return Response::json(array('status' => false, 'message' => '[Exception] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+
+	    	} else {
+
+	    		if(File::move($temp_dir . $tmp_filename, $public_dir . $new_filename)) {
+
+	    			if($isMain) {
+
+	    				if($pcat==1) iImage::make($public_dir . $new_filename)->resize(190, 285)->save($public_dir . $cat_filename);
+				        else iImage::make($public_dir . $new_filename)->resize(190, 210)->save($public_dir . $cat_filename);
+
+				        iImage::make($public_dir . $new_filename)->resize(50, 50)->save($public_dir . $thb_filename);
+				        iImage::make($public_dir . $new_filename)->resize(100, 100)->save($public_dir . $fb_filename);
+
+	    			} else {
+
+	    				iImage::make($public_dir . $new_filename)->resize(100, 150)->save($public_dir . $sml_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(33, 50)->save($public_dir . $tag_filename);
+	    			}
+
+	    			$message_output = 'Imagen cargada y renombrada';
+	    		} else {
+	    			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al cargar y renombrar la imagen'));
+	    		}
+
+	    	}
+
+	    	DB::beginTransaction();
+
+	    	if($isMain) {
+
+	    		$image 				= new Image();
+	    		$image->product_id 	= $pid;
+	    		$image->full 		= $new_filename;
+	    		$image->catalog 	= $cat_filename;
+	    		$image->fb_share 	= $fb_filename;
+	    		$image->thumbnail 	= $thb_filename;
+	    		$image->save();
+
+	    	} else {
+
+	    		$galery 				= new Galery();
+	    		$galery->product_id		= $pid;
+	    		$galery->image 			= $new_filename;
+	    		$galery->image_small 	= $sml_filename;
+	    		$galery->image_tag 		= $tag_filename;
+	    		$galery->save();
+	    	}
+
+	    	DB::commit();
+	    	return Response::json(array('status' => true, 'message' => $message_output));
+
+	    } else {
+	    	DB::rollback();
+	    	return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al cargar la imagen'));
+	    }
 	}
 
 }

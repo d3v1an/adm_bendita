@@ -10,7 +10,9 @@
 		"nesbot/carbon": "~1.14",
 		"iyank4/l4shell": "1.2.2",
 		"maatwebsite/excel": "~1.3.0",
-		"anlutro/curl": "dev-master"
+		"anlutro/curl": "dev-master",
+		"kinglozzer/tinypng": "0.1.*",
+		"intervention/image": "dev-master"
 	},
 	"autoload": {
 		"classmap": [

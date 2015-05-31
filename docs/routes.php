@@ -10,11 +10,70 @@
 | and give it the Closure to execute when that URI is requested.
 |
 */
+use Kinglozzer\TinyPng\Compressor;
+use Kinglozzer\TinyPng\Exception\AuthorizationException;
+use Kinglozzer\TinyPng\Exception\InputException;
+use Kinglozzer\TinyPng\Exception\LogicException;
 
 // Test
 Route::get('/test', function()
 {
-    return "Nuevas pruebas";
+    $description = "Esta es una descripcion en español, con acentòs";
+    $str_link = 'LC1999-' . preg_replace('/\s+/','-',fix_string($description));
+    return $str_link;
+    /*
+    return Image::all();
+
+    $compressor = new Compressor('cb4gT1RQK_vDiPLJHovMmQEr17V4_vj-');
+
+    try {
+        
+        $result = $compressor->compress(public_path() . '/tmp/1220.jpg');
+        //$result = $compressor->compress('<image data>', true); // Compress raw image data
+        $result->writeTo(public_path() . '/tmp/c_1220.jpg'); // Write the returned image
+        
+        //$result->getCompressedFileSize(); // Int size of compressed image, e.g: 104050
+        //$result->getCompressedFileSize(true); // Human-readable, e.g: '101.61 KB'
+        
+        return $result->getResponseData(); // array containing JSON-decoded response data
+
+    }
+    catch (AuthorizationException $e) {
+        return "AuthorizationException";
+    }
+    catch (InputException $e) {
+        return "InputException";
+    }
+    catch (Exception $e) {
+        $x = array("Exception" => $e);
+        return $x;
+    }
+    */
+
+    //$categories = Category::with(array('subs' => function($query){ $query->orderBy('order', 'ASC'); }))->get();
+
+    //return Input::all();//$categories;
+    //$site_config = ProductProduct::where('product_id',672)->get();
+    //return $site_config->count();
+    
+    // $pid = 1437;
+    // $rel_products = ProductProduct::where('product_id',$pid)->get();
+
+    // if($rel_products->count() > 0) {
+    //     $ids_to_delete = array();
+    //     foreach ($rel_products as $r) {
+    //         array_push($ids_to_delete, $r->id);
+    //     }
+    //     ProductProduct::destroy($ids_to_delete);
+    // }
+
+    // return "Done";
+    
+    //$pp = Product::find(1430);
+    //$pp->link_colors()->sync(array(20,21));
+
+    //$p = Product::with(array('link_colors' => function($query) { $query->with('Color', 'Product'); }))->where('id', 1443)->get();
+    //return $p;
 });
 
 // Test

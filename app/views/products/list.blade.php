@@ -456,7 +456,7 @@
                                     <label class="col-md-2 control-label" for="code">Relaciones</label>
                                     <div class="col-md-10">
                                         <div class="table-responsive">
-                                            <table id="relations-datatable" class="table table-vcenter table-condensed table-bordered">
+                                            <table id="relations-datatable" class="table table-vcenter table-condensed table-bordered table-relations">
                                                 <thead>
                                                     <tr>
                                                         <th width="50px">Imagen</th>
@@ -519,7 +519,7 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-default btn-upload-product">Agregar</button>
-                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-sm btn-default btn-cancel-product" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>

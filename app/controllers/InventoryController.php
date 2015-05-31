@@ -139,7 +139,6 @@ class InventoryController extends \BaseController {
 	// Guardamos un producto nuevo
 	public function productAdd()
 	{
-		//return Input::all();
 
 		$category_id 				= Input::get('d_category_id');
 		$sub_category_id 			= Input::get('d_sub_category_id');
@@ -241,8 +240,17 @@ class InventoryController extends \BaseController {
 
 			if(count($pcolors_ids) > 0) $product->link_colors()->sync($pcolors_ids);
 
+			// Generamos el link del producto
+			$str_link = $code . '-' . preg_replace('/\s+/','-',fix_string($description));
+
+			$link 				= new Link();
+			$link->product_id 	= $pid;
+			$link->url 			= $str_link;
+
+			$link->save();
+
 			DB::commit();
-			return Response::json(array('status' => true, 'message' => 'El producto fue agregado en el sistema correctamente.'));
+			return Response::json(array('status' => true, 'message' => 'El producto fue agregado en el sistema correctamente.', 'pid' => $pid));
 
 		} catch (Exception $e) {
 			DB::rollback();

@@ -22,11 +22,17 @@ var InventoryReportData = function() {
 
  		init: function() {
 
+ 			// Definimos el tipo de cambio
  			var _type_change = 0;
 
  			$.d3POST('/products/inventory/type_change',{},function(data){
 				if(data.status==true) _type_change = data.exchange;
 			});
+
+			// Codigo de producto global
+			var _pcode 		= '';
+			var _ppid 		= 0;
+			var _pcat 		= 0;
 
  			// Inicializacion de dataTables
  			App.datatables();
@@ -176,7 +182,6 @@ var InventoryReportData = function() {
 											                	var _buttons  = '<div class="btn-group btn-group-xsm">';
 											                		_buttons += '	<button class="btn btn-xs btn-default" data-cmd="view" data-id="' + full.id + '"><i class="gi gi-eye_open"></i></button>';
 											                		_buttons += '	<button class="btn btn-xs btn-default" data-cmd="edit" data-id="' + full.id + '"><i class="gi gi-pencil"></i></button>';
-											                		//_buttons += '	<button class="btn btn-xs btn-danger" data-cmd="del" data-id="' + full.id + '"><i class="gi gi-bin"></i></button>';
 											                		_buttons += '</div>';
 
 											                    return _buttons;
@@ -278,8 +283,8 @@ var InventoryReportData = function() {
 												                			}
 																		});
 											                			
-											                		}
-											                		else if(_cmd=='email') {
+											                		} else if(_cmd=='edit') {
+											                			console.log('Edicion');
 											                			// $('#order_id','#form-notify').val(_oid);
 											                			// $('#order_id','#form-additional-data').val(_oid);
 											                			// $('#modal-order-notify').modal('show');
@@ -330,7 +335,7 @@ var InventoryReportData = function() {
 
 	        // Disable auto discover for all elements:
     		Dropzone.autoDiscover	= false;
-    		var dropLimit 			= 7;
+    		var dropLimit 			= 10;
 
     		var previewNode 		= document.querySelector("#template");
 			previewNode.id 			= "";
@@ -343,6 +348,17 @@ var InventoryReportData = function() {
 			var mainImgName			= null;
 			var itemLinkId 			= 0;
 			var btnImgObject		= undefined;
+
+			// Contenedores de botones para deshabilitar
+			var packBtnDel 			= [];
+			var packBtnMain 		= [];
+
+			// Listas de productos relacionados
+			var relColorCodeList 	= [];
+            var relColorCodeObjs	= [];
+
+            var _relList 			= [];
+            var _relObjs			= []; 
 
     		var _dz = new Dropzone("div#dropzone",{ // Configuracion inicial de dropzone
 		        url: "/media/image/upload",
@@ -400,6 +416,9 @@ var InventoryReportData = function() {
 						if(itm.hash == itmHash) isMain = itm.isMain;
 					});
 
+		        	formData.append('pid', _ppid);
+		        	formData.append('category', _pcat);
+		        	formData.append('code', _pcode);
 		        	formData.append('name', file.name);
 		        	formData.append('hash', itmHash);
 		        	formData.append('is_main', isMain);
@@ -428,6 +447,9 @@ var InventoryReportData = function() {
 		        			var btn_pic 		= preview.find('.btn-pic');
 		        			var btn_del 		= preview.find('.btn-del');
 		        			var obj_progress	= preview.find('.progress-object');
+
+		        			packBtnDel.push(btn_del);
+		        			packBtnMain.push(btn_pic);
 
 		        			// Boton de imagen principal
 		        			btn_pic.data('cimg', itmName);
@@ -498,57 +520,25 @@ var InventoryReportData = function() {
 
 		        },
 		        complete: function(file) { // Una ves completada la carga ... [Pendinete]
-		        	//console.log('Completado');
-		        	//console.log(this.getQueuedFiles());
-		        	/*
-		            if(file.status=='error') return false;
 
-		            $('.fileprogress').slideUp('fast');
-		            $('.fileprogress_proc').slideDown('slow');
+		        	if (this.getUploadingFiles().length === 0 && this.getQueuedFiles().length === 0) {
 
-		            var _data           = $.parseJSON(file.xhr.response);
-		            var _status         = _data.status;
-		            var _original_file  = _data.original;
-		            var _original_size  = _data.original_size;
-		            var _uploaded       = _data.uploaded;
+		        		// Mensaje de finalizacion de carga de producto
+						$.bootstrapGrowl('Carga de producto exitosa', {
+	                        type: "success",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
 
-		            main_width          = $('.viewrow').width();
-		            img_width           = _data.width;
-		            img_height          = _data.height;
+	                    // Ocultamos el modal
+	                    $('#modal-add-product').modal('hide');
+			        }
 
-		            if(img_width <= main_width) {
-		                
-		                $('.img-viewer').css({'width':img_width,'height':img_height});
-		                $('#left-image').css({'width':img_width,'height':img_height});
-		                $('#right-image').css({'width':img_width,'height':img_height});
+			        if(file.status=='success') {
+			        	var _data           = $.parseJSON(file.xhr.response);
+						//console.log(_data);
+			        }
 
-		            } else {
-		                
-		                var new_size = $.resize(img_width,img_height,main_width,600);
-
-		                $('.img-viewer').css({'width':new_size.width,'height':new_size.height});
-		                $('#left-image').css({'width':new_size.width,'height':new_size.height});
-		                $('#right-image').css({'width':new_size.width,'height':new_size.height});
-		            }
-
-		            if(_status==true) {
-		                $.d3POST('/cjpg',{original:_original_file, original_size:_original_size, uploaded:_uploaded},function(data){
-
-		                    $('.fileprogress_proc').slideUp('fast');
-		                    $('#left-image').prop('src','/uploads/images/' + file.name);
-		                    $('#right-image').prop('src','/uploads/images/' + data.image);
-
-		                    $('.btn-fdownload').data('url',data.image);
-
-		                    $('.data_percent').html(data.compress_percent_real);
-		                    $('.data_before').html(data.original_size);
-		                    $('.data_after').html(data.new_file_size);
-
-		                    $('.img-viewer').slideDown('slow');
-		                    $('.compress-info').slideDown('slow');
-		                });
-		            } else console.log('Mamo');
-		            */
 		        }
 		    });
 
@@ -607,16 +597,13 @@ var InventoryReportData = function() {
 			// Categorias
 			$('#categories','#form-detail').on('change', function(){
 				var sub_categories = $("#sub-categories");
- 				$.loadSubCategories(sub_categories, $(this).val());
+ 				if(parseInt($(this).val())>0) $.loadSubCategories(sub_categories, $(this).val());
 			});
 
 			// Autocomplete de relations
             var _form 		= $('#form-relations')
             var $input 		= $('#code', _form);
             var _table 		= $('table#relations-datatable');
-
-            var _relList 	= [];
-            var _relObjs	= []; 
 
             $input.typeahead({
             	source:function(request, response) {
@@ -724,9 +711,6 @@ var InventoryReportData = function() {
             var _e_form 			= $('#form-link-color')
             var $e_input 			= $('#code', _e_form);
 
-            var relColorCodeList 	= [];
-            var relColorCodeObjs	= [];
-
             $e_input.typeahead({
             	source:function(request, response) {
 
@@ -785,48 +769,103 @@ var InventoryReportData = function() {
 				for ( instance in CKEDITOR.instances ){
 			        CKEDITOR.instances[instance].updateElement();
 			    }
-			    CKEDITOR.instances[instance].setData('');
+			    //CKEDITOR.instances[instance].setData('');
 			};
 
 			// Prices
 			$('#price_public, #price_half_wholesale, #price_wholesale, #price_dealer','#form-detail').on('keypress keyup',function(e){
 				
-				if(!$.isNumeric($(this).val())) {
-					
-					$.bootstrapGrowl('Solo se admiten numeros', {
-                        type: "danger",
-                        delay: 4500,
-                        allow_dismiss: true
-                    });
+				if($(this).val().length >= 1) {
+					if(!$.isNumeric($(this).val())) {
+						
+						$.bootstrapGrowl('Solo se admiten numeros', {
+	                        type: "danger",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
 
-                    $(this).val(0);
-                    $(this).select();
+	                    $(this).val(0);
+	                    $(this).select();
 
-                    return false;
+	                    return false;
+					}
+
+					if(parseInt($(this).val()) < 0) {
+						$.bootstrapGrowl('No e admiten numeros negativos', {
+	                        type: "danger",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
+					}
+
+					var usd_price	= (Math.ceil(parseInt($(this).val()) / _type_change));
+					var cur_id 		= $(this).prop('id');
+
+					if(cur_id=='price_public') $('#price_public_usd').val(usd_price);
+					if(cur_id=='price_half_wholesale') $('#price_half_wholesale_usd').val(usd_price);
+					if(cur_id=='price_wholesale') $('#price_wholesale_usd').val(usd_price);
+					if(cur_id=='price_dealer') $('#price_dealer_usd').val(usd_price);
 				}
-
-				if(parseInt($(this).val()) < 0) {
-					$.bootstrapGrowl('No e admiten numeros negativos', {
-                        type: "danger",
-                        delay: 4500,
-                        allow_dismiss: true
-                    });
-				}
-
-				var usd_price	= (Math.ceil(parseInt($(this).val()) / _type_change));
-				var cur_id 		= $(this).prop('id');
-
-				if(cur_id=='price_public') $('#price_public_usd').val(usd_price);
-				if(cur_id=='price_half_wholesale') $('#price_half_wholesale_usd').val(usd_price);
-				if(cur_id=='price_wholesale') $('#price_wholesale_usd').val(usd_price);
-				if(cur_id=='price_dealer') $('#price_dealer_usd').val(usd_price);
 			});
 
 			// Fix para overmodal
 	        $('#modal-add-product').on('hidden.bs.modal', function(e){
+                
                 $('#form-detail').trigger('reset');
                 $("table#elations-datatable tbody").empty();
                 $('#form-relations').trigger('reset');
+                $('#form-extras').trigger('reset');
+
+                // Formularios
+				$(":input", "#form-detail").prop("disabled", false);
+				$(":input", "#form-relations").prop("disabled", false);
+				$(":input", "#form-extras").prop("disabled", false);
+
+				// Botones
+				$("button.btn-upload-product").prop('disabled', false);
+				$("button.btn-cancel-product").prop('disabled', false);
+
+				// Limpiamos los textarea instanciados con CKEditor
+                CKEDITOR.instances['description'].setData('');
+                CKEDITOR.instances['description-eng'].setData('');
+
+                // Limpiamos la tabla de relaciones
+                $("table.table-relations tbody").empty();
+
+                // Limpiamos el multiselect de la relacion de colores y productos
+                $("#link-color","#form-extras").empty();
+
+                // Limpiamos el combo de sub-categorias
+                $("#sub-categories","#form-detail").empty();
+
+                // Reseteamos todas nuestras variables
+                // Codigo de producto global
+				_pcode 		= '';
+				_ppid 		= 0;
+				_pcat 		= 0;
+
+				// Listado de imagenes a cargar y su configuracion adicional
+				imgToUpList 		= [];
+				imgToUpObjs 		= [];
+				mainImgName			= null;
+				itemLinkId 			= 0;
+				btnImgObject		= undefined;
+
+				// Contenedores de botones para deshabilitar
+				packBtnDel 			= [];
+				packBtnMain 		= [];
+
+				// Lista de productos relacionados
+				relColorCodeList 	= [];
+	            relColorCodeObjs	= [];
+	            _relList 			= [];
+	            _relObjs			= []; 
+
+				// Re-iniciamos la dropzone
+                _dz.removeAllFiles();
+
+                // Recargamos la tabla
+				_dataTableOr.dataTable()._fnAjaxUpdate();
             });
 
             // Fix para overmodal
@@ -841,8 +880,44 @@ var InventoryReportData = function() {
             // Procesamiento de agregado de producto
             // 
 			$('.btn-upload-product').click(function(e){
-				//console.log(imgToUpObjs);
-				//console.log(_dz.getQueuedFiles());
+
+				// Verificamos que existan imagenes para cargar
+				if(imgToUpObjs.length < 1) {
+					$.bootstrapGrowl('Almenos tiene que agregar una imagen de producto', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    $('.nav-tabs a:first').tab('show');
+                    return false;
+				}
+
+				// Verificamos que existe una imagen como principal
+				var havingMain = false;
+
+				$.each(imgToUpObjs, function(i, item){
+					if(item.isMain==true) havingMain = true;
+				});
+
+				if(havingMain==false) {
+					$.bootstrapGrowl('No a definido una imagen como principal', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    $('.nav-tabs a:first').tab('show');
+                    return false;
+				}
+
+				// Establecemos el foco al tab de imagenes
+				$('.nav-tabs a:first').tab('show');
+
+				$.each(packBtnDel, function(i,item){
+					item.prop('disabled', true);
+				});
+				$.each(packBtnMain, function(i,item){
+					item.prop('disabled', true);
+				});
 				
 				// Actualizamos la informacion de los textareas que usen CKEditor
 				$.CKupdate();
@@ -871,6 +946,84 @@ var InventoryReportData = function() {
 				var _d_price_dealer_usd 		= $('#price_dealer_usd',_d_form).val();
 				var _d_gender 					= $('#gender',_d_form).val();
 
+				// Validaciones
+				// -- Detalle
+				if(_d_code=='' || _d_code.length < 3) {
+					$.bootstrapGrowl('Ingrese un codigo de producto valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_stock=='' || parseInt(_d_stock) < 0) {
+					$.bootstrapGrowl('El stock no puede ser menor a 0', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_title=='' || _d_title.length < 3) {
+					$.bootstrapGrowl('Ingrese un titulo valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_category==0) {
+					$.bootstrapGrowl('Seleccione un categoria principal', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_sub_category==0) {
+					$.bootstrapGrowl('Seleccione una sub-categoria', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_price_public=='' || _d_price_public_usd=='') {
+					$.bootstrapGrowl('Ingrese un precio al publico valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_price_half_wholesale=='' || _d_price_half_wholesale_usd=='') {
+					$.bootstrapGrowl('Ingrese un precio de medio mayoreo valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_price_wholesale=='' || _d_price_wholesale_usd=='') {
+					$.bootstrapGrowl('Ingrese un precio de mayorista valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+				if(_d_price_dealer=='' || _d_price_dealer_usd=='') {
+					$.bootstrapGrowl('Ingrese un precio de distribuidor valido', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+                    return false;
+				}
+
+				// Desabilitamos todos los formularios
+				$(":input", _d_form).prop("disabled", true);
+
 				_formData.append('d_code', _d_code);
 				_formData.append('d_stock', _d_stock);
 				_formData.append('d_title', _d_title);
@@ -890,6 +1043,11 @@ var InventoryReportData = function() {
 				_formData.append('d_price_dealer_usd', _d_price_dealer_usd);
 				_formData.append('d_gender', _d_gender);
 
+
+				// Definimos la variable global del codigo de prducto y categoria
+				_pcode 	= _d_code;
+				_pcat 	= _d_category;
+
 				// Informacion de relaciones de productos
 				var _r_arrays 			= [];
 
@@ -901,11 +1059,17 @@ var InventoryReportData = function() {
 
 				_formData.append('r_products', _r_products);
 
+				// Desabilitamos todos los formularios
+				$(":input", "#form-relations").prop("disabled", true);
+
 				// Formulario de extras
 				var _e_form				= $("#form-extras");
 				var _e_materials 		= $("#materials",_e_form).val();
 				var _e_sizes			= $("#sizes",_e_form).val();
 				var _e_icArray 			= [];
+
+				// Desabilitamos todos los formularios
+				$(":input", _e_form).prop("disabled", true);
 
 				$.each(relColorCodeObjs, function(i, item){
 					_e_icArray.push(item.color_id+'|'+item.item_id);
@@ -917,17 +1081,38 @@ var InventoryReportData = function() {
 				_formData.append('e_sizes', _e_sizes);
 				_formData.append('e_item_color', _e_prodColorList);
 
+				// Deshabilitamos los botones de cancelado y agregado de producto
+				$("button.btn-upload-product").prop('disabled', true);
+				$("button.btn-cancel-product").prop('disabled', true);
+
 				// Procesamos la informacion del producto
 				// 
 				// Si la informacion de procesa correctamente tambien llamamos al proceso de carga de imagenes
 				// En este punto el foco se mueve al tab de carga de imagenes
 				// 
 				$.d3pdPOST('/products/inventory/add',_formData,function(data){
-					console.log(data);
+
+					if(data.status==true) {
+
+						// Establecemos el id del producto
+						_ppid 	= data.pid;
+
+						// Procesamos las imagenes (Paso final)
+						_dz.processQueue();
+
+					} else {
+
+						$.bootstrapGrowl(data.message, {
+	                        type: "danger",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
+
+						return false;
+					}
+
 				});
 
-				// Procesamos las imagenes (Paso final)
-				// _dz.processQueue();
 			});
  		}
  	}
