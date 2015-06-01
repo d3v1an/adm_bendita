@@ -291,16 +291,19 @@ class InventoryController extends \BaseController {
 			
 			$product = Product::with(array(
 							'category',
-							'sub_category',
-							'sub_categories',
-							'colors',
-							'materials',
-							'image',
-							'galery',
-							'sizes',
-							'products',
-							'link')
-						)
+			                'sub_category',
+			                'sub_categories',
+			                'materials',
+			                'galery',
+			                'sizes',
+			                'products' => function($query){
+			                	$query->with('product');
+			                },
+			                'link',
+			                'link_colors' => function($query){
+			                	$query->with('color', 'product');
+			                }
+						))
 						->where('id',$id)
 						->first();
 

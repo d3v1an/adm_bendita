@@ -526,6 +526,349 @@
     </div>
     <!-- /Nuevo producto -->
 
+    <!-- Edicion de producto -->
+    <div id="modal-edit-product" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header text-center">
+                    <h2 class="modal-title">Edicion de producto</h2>
+                </div>
+                <!-- END Modal Header -->
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+
+                    <!-- Default Tabs -->
+                    <ul class="nav nav-tabs push" data-toggle="tabs">
+                        <li class="active"><a href="#e_images">Imagenes</a></li>
+                        <li><a href="#e_detail">Detalle</a></li>
+                        <li><a href="#e_relations">Relacion</a></li>
+                        <li><a href="#e_extras">Extras</a></li>
+                    </ul>
+
+                    <div class="tab-content">
+
+                        <!-- Imagenes -->
+                        <div class="tab-pane active" id="e_images">
+
+                            <div class="row">
+                                <div class="col-md-12" id="existing-images">
+
+                                    <div id="_templateUp" class="galery-up-file">
+                                        <div><span class="preview"><img class="img-responsive center-block" /></span></div>
+                                        <div>
+                                            <div class="btn-group"> <!-- data-dz-remove  -->
+                                                <button class="btn btn-xs btn-default btn-del" type="button"><i class="gi gi-bin"></i> Eliminar</button>
+                                                <button class="btn btn-xs btn-success btn-pic" type="button"><i class="gi gi-heart"></i> Principal</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="dropzone" id="e_dropzone"></div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+
+                                <div class="col-md-12" id="previewsUp">
+
+                                    <div id="templateUp" class="galery-up-file">
+                                        <div><span class="preview"><img data-dz-thumbnail class="img-responsive center-block" /></span></div>                               
+                                        <div>
+                                            <!-- <p class="name" data-dz-name></p> -->
+                                            <strong class="error text-danger" data-dz-errormessage></strong>
+                                        </div>
+                                        <div>
+                                            <span class="size" data-dz-size></span>
+                                            <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                                <div class="progress-bar progress-bar-success progress-object" style="width:0%;" data-dz-uploadprogress></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="btn-group"> <!-- data-dz-remove  -->
+                                                <button class="btn btn-xs btn-default btn-del" type="button"><i class="gi gi-bin"></i> Eliminar</button>
+                                                <button class="btn btn-xs btn-success btn-pic" type="button"><i class="gi gi-heart"></i> Principal</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Detalles -->
+                        <div class="tab-pane" id="e_detail">
+
+                            <!-- Basic Form Elements Content -->
+                            <form action="#" method="post" class="form-horizontal form-bordered" id="form-edit-detail" name="form-edit-detail" onsubmit="return false;">
+                                <input type="hidden" id="pid" name="pid" />
+                                <!-- Codigo -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="code">Codigo</label>
+                                    <div class="col-md-3">
+                                        <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto..">
+                                    </div>
+                                    <label class="col-md-2 control-label" for="stock">Stock</label>
+                                    <div class="col-md-2">
+                                        <input type="text" id="stock" name="stock" class="form-control" placeholder="Stock.." value="0">
+                                    </div>
+                                </div>
+                                
+                                <!-- Titulo -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="title-edit-accordion">Titulo</label>
+                                    <div class="col-md-10">
+
+                                        <div class="panel-group" id="title-edit-accordion" role="tablist" aria-multiselectable="true">
+                                            
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading" role="tab" id="headingOne">
+                                                    <h4 class="panel-title">
+                                                        <a data-toggle="collapse" data-parent="#title-edit-accordion" href="#e_collapseOne" aria-expanded="true" aria-controls="e_collapseOne">
+                                                        Español
+                                                        </a>
+                                                    </h4>
+                                                </div>
+                                                <div id="e_collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                                                    <div class="panel-body">
+                                                        <input type="text" id="title" name="title" class="form-control" placeholder="Titulo de producto..">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading" role="tab" id="headingTwo">
+                                                    <h4 class="panel-title">
+                                                        <a class="collapsed" data-toggle="collapse" data-parent="#title-edit-accordion" href="#e_collapseTwo" aria-expanded="false" aria-controls="e_collapseTwo">
+                                                        Ingles
+                                                        </a>
+                                                    </h4>
+                                                </div>
+                                                <div id="e_collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+                                                    <div class="panel-body">
+                                                        <input type="text" id="title-eng" name="title-eng" class="form-control" placeholder="Product title">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Descripcion -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="description-edit-accordion">Descripcion</label>
+                                    <div class="col-md-10">
+
+                                        <div class="panel-group" id="description-edit-accordion" role="tablist" aria-multiselectable="true">
+                                            
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading" role="tab" id="headingOne">
+                                                    <h4 class="panel-title">
+                                                        <a data-toggle="collapse" data-parent="#description-edit-accordion" href="#e_collapseOne-Desc" aria-expanded="true" aria-controls="e_collapseOne-Desc">
+                                                        Español
+                                                        </a>
+                                                    </h4>
+                                                </div>
+                                                <div id="e_collapseOne-Desc" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                                                    <div class="panel-body">
+                                                        <textarea id="e_description" name="e_description" class="ckeditor"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading" role="tab" id="headingTwo">
+                                                    <h4 class="panel-title">
+                                                        <a class="collapsed" data-toggle="collapse" data-parent="#description-edit-accordion" href="#e_collapseTwo-Desc" aria-expanded="false" aria-controls="e_collapseTwo-Desc">
+                                                        Ingles
+                                                        </a>
+                                                    </h4>
+                                                </div>
+                                                <div id="e_collapseTwo-Desc" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+                                                    <div class="panel-body">
+                                                        <textarea id="e_description-eng" name="e_description-eng" class="ckeditor"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Categoria y sub categoria -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="categories">Categoria</label>
+                                    <div class="col-md-4">
+                                        <select id="categories" name="categories" class="form-control" size="1">
+                                        </select>
+                                    </div>
+                                    <label class="col-md-2 control-label" for="sub-categories">Sub Categoria</label>
+                                    <div class="col-md-4">
+                                        <select id="sub-categories" name="sub-categories" class="form-control" size="1">
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Multi Sub Categoria -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="e-multi-sub-categories">Multi Categoria</label>
+                                    <div class="col-md-10">
+                                        <select id="e-multi-sub-categories" name="e-multi-sub-categories" class="form-control" size="7" multiple>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Prices -->
+                                <div class="form-group">
+                                    <div class="row">
+                                        <label class="col-md-2 control-label" for="price_public">P. Publico</label>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_public" name="price_public" class="form-control" placeholder="0.00 MXN">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_public_usd" name="price_public_usd" class="form-control" placeholder="0.00 USD" readonly>
+                                        </div>
+                                        <label class="col-md-2 control-label" for="price_half_wholesale">P. Medio Mayoreo</label>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_half_wholesale" name="price_half_wholesale" class="form-control" placeholder="0.00 MXN">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_half_wholesale_usd" name="price_half_wholesale_usd" class="form-control" placeholder="0.00 USD" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <label class="col-md-2 control-label" for="price_wholesale">P. Mayoreo</label>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_wholesale" name="price_wholesale" class="form-control" placeholder="0.00 MX">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_wholesale_usd" name="price_wholesale_usd" class="form-control" placeholder="0.00 USD" readonly>
+                                        </div>
+                                        <label class="col-md-2 control-label" for="price_dealer">P. Distribuidor</label>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_dealer" name="price_dealer" class="form-control" placeholder="0.00 MX">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" id="price_dealer_usd" name="price_dealer_usd" class="form-control" placeholder="0.00 USD" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Genero -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="gender">Genero</label>
+                                    <div class="col-md-2">
+                                        <select id="gender" name="gender" class="form-control" size="1">
+                                            <option value="f">Mujer</option>
+                                            <option value="m">Hombre</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                            </form>
+                            <!-- END Basic Form Elements Content -->
+                        </div>
+
+                        <!-- Relaciones -->
+                        <div class="tab-pane" id="e_relations">
+
+                            <!-- Basic Form Elements Content -->
+                            <form action="#" method="post" class="form-horizontal form-bordered" id="form-edit-relations" name="form-edit-relations" onsubmit="return false;">
+                                
+                                <!-- Codigo -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="code">Codigo</label>
+                                    <div class="col-md-3">
+                                        <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto.." autocomplete="off">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-sm btn-default btn-search-code" disabled>Agregar</button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Relations -->
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label" for="code">Relaciones</label>
+                                    <div class="col-md-10">
+                                        <div class="table-responsive">
+                                            <table id="relations-edit-datatable" class="table table-vcenter table-condensed table-bordered table-edit-relations">
+                                                <thead>
+                                                    <tr>
+                                                        <th width="50px">Imagen</th>
+                                                        <th>Codigo</th>
+                                                        <th>Descripcion</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </form>
+                            <!-- END Basic Form Elements Content -->
+                        </div>
+
+                        <!-- Materials -->
+                        <div class="tab-pane" id="e_extras">
+                            <form action="#" method="post" class="form-horizontal form-bordered" id="form-edit-extras" name="form-edit-extras" onsubmit="return false;">
+
+                                <div class="form-group">
+                                    <div class="col-md-6">
+                                        <label for="e-materials">Materiales</label>
+                                        <select id="e-materials" name="e-materials" class="form-control" size="5" multiple>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="e-sizes">Tallas</label>
+                                        <select id="e-sizes" name="e-sizes" class="form-control" size="5" multiple>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        <label for="e-colors">Colores</label>
+                                        <select id="e-colors" name="e-colors" class="form-control" size="5">
+                                        </select>
+                                    </div>
+                                    <div class="col-md-1 text-center btn-vc">
+                                        <button class="btn btn-xs btn-default btn-color-link"><i class="hi hi-log_in"></i></button>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label for="e-link-color">Colores & Codigo</label>
+                                        <select id="e-link-color" name="e-link-color" class="form-control" size="5" readonly>
+                                        </select>
+                                    </div>
+                                </div>
+
+                            </form>
+                        </div>
+
+                    </div>
+                    <!-- END Default Tabs -->
+                    
+                </div>
+                <!-- END Modal Body -->
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default btn-edit-product">Editar</button>
+                    <button type="button" class="btn btn-sm btn-default btn-cancel-edit-product" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Edicion de producto -->
+
     <!-- Categorias -->
     <div id="modal-categories" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-lg">

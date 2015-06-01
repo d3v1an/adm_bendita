@@ -14,7 +14,20 @@
 // Test
 Route::get('/test', function()
 {
-    return "Nuevas pruebas";
+    $product = Product::with(array(
+                'category',
+                'sub_category',
+                'sub_categories',
+                'materials',
+                'galery',
+                'sizes',
+                'products',
+                'link',
+                'link_colors'
+            ))
+            ->whereIn('id',array(1456,1455,1454,1453,1452,1451,1450,1449,1448,1447,1170))->get();
+
+    return $product;
 });
 
 // Test
@@ -243,6 +256,7 @@ Route::group(array('before' => 'auth.cp'), function()
 
         // Obtenemos el tipo de cambio
         Route::post('products/inventory/type_change', 'InventoryController@typeCgange');
+
 });
 
 // Printables

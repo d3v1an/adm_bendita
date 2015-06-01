@@ -3996,6 +3996,10 @@ a.notelink:hover {
     float: left;
     margin: 5px;
 }
+.galery-up-file img.uploaded {
+    width: 190px;
+    height: 285px;
+}
 .galery-up-file .progress {
     margin-bottom: 5px!important;
 }

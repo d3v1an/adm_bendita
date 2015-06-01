@@ -89,25 +89,38 @@ $(function() {
     // Carga de categorias
     $.loadCategories = function(options, selected, _default) {
 
+        var _data = undefined;
+
         if(options==undefined) {
             console.log('No se a proporcionado un selector');
             return false;
         }
 
+        $.d3POST('/products/category/load',{},function(data){
+            if(data.status==true) _data = data;
+        }, false);
+
+        if(_data!=undefined) {
+            if(options instanceof Array) {
+                $.each(options, function(i, item){
+                    $.loadCatHandler(_data, item, selected, _default);
+                });
+            } else $.loadCatHandler(_data, options, selected, _default);
+        }
+
+    };
+    $.loadCatHandler = function(data, options, selected, _default) {
+
         options.empty();
 
-        $.d3POST('/products/category/load',{},function(data){
-            if(data.status==true) {
-                if(data.categories.length > 0) {
-                    var _select = '';
-                    if(_default!=undefined) _select += '<option value="0">Seleccionar</option>';
-                    $.each(data.categories, function(i, item) {
-                        _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
-                    });
-                    options.append(_select);
-                }
-            }
-        });
+        if(data.categories.length > 0) {
+            var _select = '';
+            if(_default!=undefined) _select += '<option value="0">Seleccionar</option>';
+            $.each(data.categories, function(i, item) {
+                _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
+            });
+            options.append(_select);
+        }
 
     };
 
@@ -143,102 +156,154 @@ $(function() {
     // Carga de categorias con sub-categorias
     $.loadComplexCategories = function(options) {
 
+        var _data = undefined;
+
         if(options==undefined) {
             console.log('No se a proporcionado un selector');
             return false;
         }
 
+        $.d3POST('/products/complex_categories/load',{},function(data){
+            if(data.status==true) _data = data;
+        }, false);
+
+        if(_data!=undefined) {
+            if(options instanceof Array) {
+                $.each(options, function(i, item){
+                    $.loadComplexCatHandler(_data, item);
+                });
+            } else $.loadComplexCatHandler(_data, options);
+        }
+
+    };
+    $.loadComplexCatHandler = function(data, options) {
+
         options.empty();
 
-        $.d3POST('/products/complex_categories/load',{},function(data){
-            if(data.status==true) {
-                if(data.complex_categories.length > 0) {
-                    var _select = '';
-                    $.each(data.complex_categories, function(i, item) {
-                        if(item.subs.length > 0) {
-                            _select += '<optgroup label="' + item.name + '">';
-                            $.each(item.subs, function(y, ytem) {
-                                _select += '<option value="' + ytem.id + '">' + ytem.name + '</option>';
-                            });
-                            _select += '<optgroup>';
-                        }
+        if(data.complex_categories.length > 0) {
+            var _select = '';
+            $.each(data.complex_categories, function(i, item) {
+                if(item.subs.length > 0) {
+                    _select += '<optgroup label="' + item.name + '">';
+                    $.each(item.subs, function(y, ytem) {
+                        _select += '<option value="' + ytem.id + '">' + ytem.name + '</option>';
                     });
-                    options.append(_select);
+                    _select += '<optgroup>';
                 }
-            }
-        });
+            });
+            options.append(_select);
+        }
 
     };
 
     // Carga de materiales
     $.loadMaterials = function(options, selected) {
 
+        var _data = undefined;
+
         if(options==undefined) {
             console.log('No se a proporcionado un selector');
             return false;
         }
 
+        $.d3POST('/products/materials/load',{},function(data){
+            if(data.status==true) _data = data;
+        }, false);
+
+        if(_data!=undefined) {
+            if(options instanceof Array) {
+                $.each(options, function(i, item){
+                    $.loadMatHandler(_data, item);
+                });
+            } else $.loadMatHandler(_data, options, selected);
+        }
+
+    };
+    $.loadMatHandler = function(data, options, selected) {
+
         options.empty();
 
-        $.d3POST('/products/materials/load',{},function(data){
-            if(data.status==true) {
-                if(data.items.length > 0) {
-                    var _select = '';
-                    $.each(data.items, function(i, item) {
-                        _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
-                    });
-                    options.append(_select);
-                }
-            }
-        });
+        if(data.items.length > 0) {
+            var _select = '';
+            $.each(data.items, function(i, item) {
+                _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
+            });
+            options.append(_select);
+        }
 
     };
 
     // Carga de tallas
     $.loadSizes = function(options, selected) {
 
+        var _data = undefined;
+
         if(options==undefined) {
             console.log('No se a proporcionado un selector');
             return false;
         }
 
+        $.d3POST('/products/sizes/load',{},function(data){
+            if(data.status==true) _data = data;
+        }, false);
+
+        if(_data!=undefined) {
+            if(options instanceof Array) {
+                $.each(options, function(i, item){
+                    $.loadSizesHandler(_data, item);
+                });
+            } else $.loadSizesHandler(_data, options, selected);
+        }
+
+    };
+    $.loadSizesHandler = function(data, options, selected) {
+
         options.empty();
 
-        $.d3POST('/products/sizes/load',{},function(data){
-            if(data.status==true) {
-                if(data.items.length > 0) {
-                    var _select = '';
-                    $.each(data.items, function(i, item) {
-                        _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.size + '</option>';
-                    });
-                    options.append(_select);
-                }
-            }
-        });
+        if(data.items.length > 0) {
+            var _select = '';
+            $.each(data.items, function(i, item) {
+                _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.size + '</option>';
+            });
+            options.append(_select);
+        }
 
     };
 
     // Carga de colores
     $.loadColors = function(options, selected) {
 
+        var _data = undefined;
+
         if(options==undefined) {
             console.log('No se a proporcionado un selector');
             return false;
         }
 
+        $.d3POST('/products/colors/load',{},function(data){
+            if(data.status==true) _data = data;
+        }, false);
+
+        if(_data!=undefined) {
+            if(options instanceof Array) {
+                $.each(options, function(i, item){
+                    $.loadColorsHandler(_data, item);
+                });
+            } else $.loadColorsHandler(_data, options, selected);
+        }
+
+    };
+    $.loadColorsHandler = function(data, options, selected) {
+
         options.empty();
 
-        $.d3POST('/products/colors/load',{},function(data){
-            if(data.status==true) {
-                if(data.items.length > 0) {
-                    var _select = '';
-                    $.each(data.items, function(i, item) {
-                        _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
-                    });
-                    options.append(_select);
-                }
-            }
-        });
+        if(data.items.length > 0) {
+            var _select = '';
+            $.each(data.items, function(i, item) {
+                _select += '<option value="' + item.id + '" ' + (selected!=undefined && selected==item.id?'selected':'') + '>' + item.name + '</option>';
+            });
+            options.append(_select);
+        }
 
     };
 });

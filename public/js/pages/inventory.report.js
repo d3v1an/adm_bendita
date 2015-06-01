@@ -4,19 +4,19 @@ var InventoryReportData = function() {
 
  		load: function() {
 
- 			var categories = $("#categories", "#form-detail");
+ 			var categories = [$("#categories", "#form-detail"),$("#categories", "#form-edit-detail")];
  			$.loadCategories(categories, undefined, true);
 
- 			var complex_categories = $("#multi-sub-categories", "#form-detail");
+ 			var complex_categories = [$("#multi-sub-categories", "#form-detail"),$("#e-multi-sub-categories", "#form-edit-detail")];
  			$.loadComplexCategories(complex_categories);
 
- 			var materials = $("#materials", "#form-extras");
+ 			var materials = [$("#materials", "#form-extras"),$("#e-materials", "#form-edit-extras")];
  			$.loadMaterials(materials);
 
- 			var sizes = $("#sizes", "#form-extras");
+ 			var sizes = [$("#sizes", "#form-extras"), $("#e-sizes", "#form-edit-extras")];
  			$.loadSizes(sizes);
 
- 			var colors = $("#colors", "#form-extras");
+ 			var colors = [$("#colors", "#form-extras"),$("#e-colors", "#form-edit-extras")];
  			$.loadColors(colors);
  		},
 
@@ -33,6 +33,30 @@ var InventoryReportData = function() {
 			var _pcode 		= '';
 			var _ppid 		= 0;
 			var _pcat 		= 0;
+
+			var imgToUpList 		= [];
+			var imgToUpObjs 		= [];
+			var mainImgName			= null;
+			var itemLinkId 			= 0;
+			var btnImgObject		= undefined;
+
+			// Contenedores de botones para deshabilitar
+			var packBtnDel 			= [];
+			var packBtnMain 		= [];
+
+			// Botones de carga de imagenes en modo actualizacion
+			var packUpBtnDel 		= [];
+			var packUpBtnMain 		= [];
+
+			// Listas de productos relacionados
+			var relColorCodeList 	= [];
+            var relColorCodeObjs	= [];
+
+            var _relList 			= [];
+            var _relObjs			= [];
+
+            // Limitador de carga segun las imagenes ya ligadas
+            var dropUpLimit 		= 10;
 
  			// Inicializacion de dataTables
  			App.datatables();
@@ -284,10 +308,333 @@ var InventoryReportData = function() {
 																		});
 											                			
 											                		} else if(_cmd=='edit') {
-											                			console.log('Edicion');
-											                			// $('#order_id','#form-notify').val(_oid);
-											                			// $('#order_id','#form-additional-data').val(_oid);
-											                			// $('#modal-order-notify').modal('show');
+
+											                			$.d3POST('/products/inventory/item/info',{id:_pid},function(data){
+
+											                				if(data.status==true) {	
+
+											                					// Carga de imagenes
+											                					$('#existing-images').empty();
+
+											                					imgToUpObjs 		= [];
+											                					imgToUpList 		= [];
+
+											                					packUpBtnDel 		= [];
+											                					packUpBtnMain 		= [];
+
+											                					var _pid 			= data.product.id;
+
+											                					var itmName 		= '';
+											                					var imgData 		= {};
+
+											                					var _objImage 		= '';
+
+											                					var _this_btn_del 	= undefined;
+										                                    	var _this_btn_main 	= undefined;
+
+											                					// Cargamos la imagen principal por defecto
+											                					_mimage 			= data.product.code + '.jpg';
+											                                    itmName 			= CryptoJS.MD5(_mimage).toString();
+																				imgData 			= {  "name" : _mimage , "hash" : itmName, 'isMain' : true };
+
+										                						_objImage += '<div id="_e_img_' + itmName + '" class="galery-up-file btns-uploaded">';
+										                                        _objImage += '	<div><span class="preview"><img class="img-responsive center-block uploaded" src="' + url + img_cat + data.product.code + '_cat.jpg" /></span></div>';
+										                                        _objImage += '	<div>';
+										                                        _objImage += '		<div class="btn-group">';
+										                                        _objImage += '			<button class="btn btn-xs btn-default" id="_e_d_' + itmName + '" data-hash="' + itmName + '" data-pid="' + _pid + '" data-mig="' + data.product.id + '" data-cmd="del" type="button"><i class="gi gi-bin"></i> Eliminar</button>';
+										                                        _objImage += '			<button class="btn btn-xs btn-danger" id="_e_e_' + itmName + '" data-hash="' + itmName + '" data-pid="' + _pid + '" data-mig="' + data.product.id + '" data-cmd="pic" type="button"><i class="gi gi-heart"></i> Principal</button>';
+										                                        _objImage += '		</div>';
+										                                        _objImage += '	</div>';
+										                                    	_objImage += '</div>';
+
+										                                    	$('#existing-images').append(_objImage);
+
+										                                    	_this_btn_del 		= $("button#_e_d_" + itmName, ".btns-uploaded");
+										                                    	_this_btn_main 		= $("button#_e_e_" + itmName, ".btns-uploaded");
+
+										                                    	packUpBtnDel.push(_this_btn_del);
+										                                    	packUpBtnMain.push(_this_btn_main);
+
+																				imgToUpObjs.push(imgData);
+																				imgToUpList.push(itmName);
+
+																				// Decrementamos la cantidad de imagenes a cargar para actualizar
+																				dropUpLimit = ((dropUpLimit - 1) - data.product.galery.length);
+
+																				_e_dz.options.maxFiles 			= dropUpLimit;
+																				_e_dz.options.parallelUploads 	= dropUpLimit;
+
+																				btnImgObject 		= _this_btn_main;
+																				mainImgName 		= itmName;
+
+																				_objImage 			= '';
+
+											                                    // Cargamos la galeria adjunta cuando existe
+											                                    if(data.product.galery.length > 0) {
+
+											                                    	$.each(data.product.galery, function(i, item){
+
+											                                    		itmName = CryptoJS.MD5(item.image).toString();
+																						imgData = {  "name" : item.image , "hash" : itmName, 'isMain' : false };
+
+										                                    			_objImage = '<div id="_e_img_' + itmName + '" class="galery-up-file btns-uploaded">';
+												                                        _objImage += '	<div><span class="preview"><img class="img-responsive center-block uploaded" src="' + url + img_cat + item.image + '" /></span></div>';
+												                                        _objImage += '	<div>';
+												                                        _objImage += '		<div class="btn-group">';
+												                                        _objImage += '			<button class="btn btn-xs btn-default" id="_e_d_' + itmName + '" data-hash="' + itmName + '" data-pid="' + _pid + '" data-mig="' + item.id + '" data-cmd="del" type="button"><i class="gi gi-bin"></i> Eliminar</button>';
+												                                        _objImage += '			<button class="btn btn-xs btn-success" id="_e_e_' + itmName + '" data-hash="' + itmName + '" data-pid="' + _pid + '" data-mig="' + item.id + '" data-cmd="pic" type="button"><i class="gi gi-heart"></i> Principal</button>';
+												                                        _objImage += '		</div>';
+												                                        _objImage += '	</div>';
+												                                    	_objImage += '</div>';
+
+												                                    	$('#existing-images').append(_objImage);
+
+												                                    	_this_btn_del 	= $("button#_e_d_" + itmName, ".btns-uploaded");
+												                                    	_this_btn_main 	= $("button#_e_e_" + itmName, ".btns-uploaded");
+
+												                                    	packUpBtnDel.push(_this_btn_del);
+												                                    	packUpBtnMain.push(_this_btn_main);
+
+																						imgToUpObjs.push(imgData);
+																						imgToUpList.push(itmName);									                                    	
+
+											                                    	});
+
+											                                    }
+
+																				$("button", ".btns-uploaded").on('click', function(){
+
+																					var _cmd 	= $(this).data('cmd');
+																					var _hash 	= $(this).data('hash');
+																					var _ppid 	= $(this).data('pid');
+																					var _mid 	= $(this).data('mig');
+
+																					if(_cmd=='del') {
+
+																						if(mainImgName==_hash) {
+																							$.bootstrapGrowl('No puedes eliminar la imagen principal.', {
+																		                        type: "danger",
+																		                        delay: 4500,
+																		                        allow_dismiss: true
+																		                    });
+																							return false;
+																						}
+																							
+																						imgToUpList.splice(imgToUpList.indexOf(_hash), 1);
+
+																						$.each(imgToUpObjs, function(i, item){
+																							if(item.has==_hash) {
+																								imgToUpObjs.splice(imgToUpObjs.indexOf(item), 1);
+																								return false;
+																							}
+																						});
+
+																						dropUpLimit = (dropUpLimit + 1);
+
+																						_e_dz.options.maxFiles 			= dropUpLimit;
+																						_e_dz.options.parallelUploads 	= dropUpLimit;
+
+																						$('#existing-images div[id="_e_img_' + _hash + '"]').remove();
+
+																					} else if(_cmd=='pic') {
+
+																						btnImgObject.removeClass('btn-danger');
+																						btnImgObject.addClass('btn-success');
+
+																						$.each(imgToUpObjs, function(i, item){
+																							if(item.hash=_hash) item.isMain = true;
+																							else item.isMain = false;
+																						});
+
+																						btnImgObject 		= $(this);
+																						mainImgName 		= _hash;
+
+																						btnImgObject.removeClass('btn-success');
+																						btnImgObject.addClass('btn-danger');
+
+																					}
+																					
+																					console.log(packUpBtnDel);
+																					console.log(packUpBtnMain);
+																				});
+
+											                					// Detalle
+											                					var _form = $("#form-edit-detail");
+
+											                					$("#pid", _form).val(_pid);
+											                					$("#code", _form).val(data.product.code);
+											                					$("#stock", _form).val(data.product.stock);
+											                					$("#title", _form).val(data.product.description);
+											                					$("#title-eng", _form).val(data.product.description_en);
+											                					
+											                					CKEDITOR.instances["e_description"].setData(data.product.detail);
+											                					CKEDITOR.instances["e_description-eng"].setData(data.product.detail_en);
+
+											                					$("#categories", _form).val(data.product.category_id);
+
+											                					var e_sub_categories = $("#sub-categories", _form);
+ 																				$.loadSubCategories(e_sub_categories, data.product.category_id, data.product.sub_category_id);
+
+ 																				$("#e-multi-sub-categories option").prop("selected", false);
+ 																				if(data.product.sub_categories.length > 0) {
+ 																					$.each(data.product.sub_categories, function(i, item){
+ 																						$("#e-multi-sub-categories option[value='" + item.id + "']").prop("selected", true);
+ 																					});
+ 																				}
+
+ 																				$("#price_public", _form).val(data.product.price_public);
+ 																				$("#price_public_usd", _form).val(data.product.price_public_usd);
+ 																				$("#price_half_wholesale", _form).val(data.product.price_half_wholesale);
+ 																				$("#price_half_wholesale_usd", _form).val(data.product.price_half_wholesale_usd);
+ 																				$("#price_wholesale", _form).val(data.product.price_wholesale);
+ 																				$("#price_wholesale_usd", _form).val(data.product.price_wholesale_usd);
+ 																				$("#price_dealer", _form).val(data.product.price_dealer);
+ 																				$("#price_dealer_usd", _form).val(data.product.price_dealer_usd);
+
+ 																				$("#gender", _form).val(data.product.gender);
+
+ 																				// Relations
+ 																				var _table = $("table.table-edit-relations");
+ 																				
+ 																				$('tbody',_table).empty();
+
+ 																				_relList = [];
+																	            _relObjs = [];
+
+ 																				if(data.product.products.length > 0) {
+ 																					
+ 																					var _tr 	= '';
+
+																					$.each(data.product.products, function(i, item){
+
+																						_tr 	+= '<tr id="' + item.product.code + '">';
+																	            		_tr 	+= '	<td class="text-center"><img src="' + url + img_cat + item.product.code + '_tumb.jpg" width="50" height="50" /></td>';
+																	            		_tr 	+= '	<td>' + item.product.code + '</td>';
+																	            		_tr 	+= '	<td>' + item.product.description + '</td>';
+																	            		_tr 	+= '	<td class="text-center">';
+																	            		_tr 	+= '		<div class="btn-group">';
+																	            		_tr 	+= '			<a href="javascript:void(0)" data-toggle="tooltip" title="Eliminar" class="btn btn-xs btn-danger btn-del" id="_e_a_' + item.product.code + '" data-code="' + item.product.code + '"><i class="fa fa-times"></i></a>';
+																	            		_tr 	+= '		</div>';
+																	            		_tr 	+= '	</td>';
+																	            		_tr 	+= '</tr>';
+
+																	            		var relObj = {
+																		            		'id' 	: item.product.id,
+																		            		'code'	: item.product.code,
+																		            		'desc'	: item.product.description
+																		            	};
+
+																		            	_relList.push(item.product.code);
+																		            	_relObjs.push(relObj);
+
+																					});
+
+																					_table.append(_tr);
+
+																					// Acion para eliminar un elemnto relacional
+																	            	$('tbody tr td div a', _table).on('click', function() {
+
+																	            		var _confirm = confirm('Realmente dese eliminar este articulo de la lista de relaciones?');
+
+																	            		if(_confirm==true) {
+
+																	            			var _code = $(this).data('code');
+
+																		            		_relList.splice(_relList.indexOf(_code), 1);
+
+																		            		$.each(_relObjs, function(i, item) {
+																		    					if(item.code == _code) {
+																		    						_relObjs.splice(_relObjs.indexOf(item), 1);
+																		    						return false;
+																		    					}
+																		    				});
+
+																		    				$('tbody tr[id="' + _code + '"]', _table).remove();
+
+																	            		}
+
+																	            	});
+
+ 																				}
+
+ 																				// Extras
+ 																				$("#e-materials option").prop("selected", false);
+ 																				if(data.product.materials.length > 0) {
+ 																					$.each(data.product.materials, function(i, item){
+ 																						$("#e-materials option[value='" + item.id + "']").prop("selected", true);
+ 																					});
+ 																				}
+ 																				$("#e-sizes option").prop("selected", false);
+ 																				if(data.product.sizes.length > 0) {
+ 																					$.each(data.product.materials, function(i, item){
+ 																						$("#e-sizes option[value='" + item.id + "']").prop("selected", true);
+ 																					});
+ 																				}
+
+ 																				relColorCodeList = [];
+            																	relColorCodeObjs = [];
+
+            																	$("#e-link-color option").empty();
+ 																				if(data.product.link_colors.length > 0) {
+ 																					
+ 																					var _osel = '';
+ 																					
+ 																					$.each(data.product.link_colors, function(i, item){
+
+ 																						var relObj = {
+																		            		'color_id' 	: item.color_id,
+																		            		'item_id'	: item.product_id,
+																		            		'item_code'	: item.product.code,
+																		            		'item_desc'	: item.product.description
+																		            	};
+
+																		            	relColorCodeList.push(item.color_id);
+            																			relColorCodeObjs.push(relObj);
+
+ 																						_osel += '<option value="' + item.color_id + '|' + item.product_id + '" data-cid="' + item.color_id + '">' + item.color.name + ' - ' + item.product.code + ' - ' + item.product.description + '</option>';
+ 																					});
+
+ 																					$("#e-link-color","#form-edit-extras").append(_osel);
+
+ 																					$("#e-link-color","#form-edit-extras").on('dblclick', function(){
+
+ 																						var _selected 	= $('option:selected',this);
+ 																						var _color_id 	= _selected.data('cid');
+
+ 																						if(_selected.length>0) {
+
+ 																							var _confirm 	= confirm('Realmente desea eliminar el item "' + _selected.text() + '"?');
+
+	 																						if(_confirm==true) {
+
+	 																							$.each(relColorCodeObjs, function(y, ytem){
+	 																								console.log(ytem.color_id + '-' + _color_id);
+	 																								if(ytem.color_id==_color_id) {
+	 																									relColorCodeObjs.splice(relColorCodeObjs.indexOf(ytem), 1);
+	 																									return false;
+	 																								}
+	 																							});
+
+	 																							relColorCodeList.splice(relColorCodeList.indexOf(_color_id), 1);
+	 																							_selected.remove();
+	 																						}
+ 																						}
+ 																						
+ 																					});
+ 																				}
+
+											                					$('#modal-edit-product').modal('show');
+											                				}
+											                				else {
+
+											                					$.bootstrapGrowl(data.message, {
+															                        type: "danger",
+															                        delay: 4500,
+															                        allow_dismiss: true
+															                    });
+											                				}
+											                			});
+											                			
 											                		}
 											                	});
 											                }
@@ -343,23 +690,6 @@ var InventoryReportData = function() {
 			previewNode.parentNode.removeChild(previewNode);
 
 			// Listado de imagenes a cargar y su configuracion adicional
-			var imgToUpList 		= [];
-			var imgToUpObjs 		= [];
-			var mainImgName			= null;
-			var itemLinkId 			= 0;
-			var btnImgObject		= undefined;
-
-			// Contenedores de botones para deshabilitar
-			var packBtnDel 			= [];
-			var packBtnMain 		= [];
-
-			// Listas de productos relacionados
-			var relColorCodeList 	= [];
-            var relColorCodeObjs	= [];
-
-            var _relList 			= [];
-            var _relObjs			= []; 
-
     		var _dz = new Dropzone("div#dropzone",{ // Configuracion inicial de dropzone
 		        url: "/media/image/upload",
 		        dictDefaultMessage: '<i class="fa fa-cloud-upload"></i><p><span>Arrastra tu imagen ó da click.</span></p>',
@@ -542,9 +872,7 @@ var InventoryReportData = function() {
 		        }
 		    });
 
-			// Detalle
-
-			// Codigo
+			// Detalle - Codigo
 			$('#code','#form-detail').on('keypress keyup',function(e){
 				this.value = this.value.toUpperCase();
 			});
@@ -619,12 +947,12 @@ var InventoryReportData = function() {
             	minLength: 2,
             	items:'all',
             	displayText: function(item) {
-            		$(".btn-search-code").prop('disabled', false);
+            		$(".btn-search-code", _form).prop('disabled', false);
             		return item.code + ' (' + item.description + ')';
             	}
             });
 
-            $(".btn-search-code").click(function(){
+            $(".btn-search-code", _form).click(function(){
 
             	var data 	= $input.typeahead("getActive");
             	var _id 	= data.id;
@@ -867,6 +1195,291 @@ var InventoryReportData = function() {
                 // Recargamos la tabla
 				_dataTableOr.dataTable()._fnAjaxUpdate();
             });
+
+			// Codigo
+			// Autocomplete de relations
+            var e_form 		= $('#form-edit-relations')
+            var $e_input 	= $('#code', e_form);
+            var e_table 	= $('table#relations-edit-datatable');
+
+            $e_input.typeahead({
+            	source:function(request, response) {
+
+            		var _state 	= $e_input.val();
+            		var _term 	= request.term;
+
+					$.d3POST('/customer/orders/detail/item/search',{state:_state, term:_term},function(data){
+						response(data);
+					});
+            	},
+            	autoSelect: true,
+            	minLength: 2,
+            	items:'all',
+            	displayText: function(item) {
+            		$(".btn-search-code", e_form).prop('disabled', false);
+            		return item.code + ' (' + item.description + ')';
+            	}
+            });
+
+            $(".btn-search-code", e_form).click(function(){
+
+            	var data 	= $e_input.typeahead("getActive");
+            	var _id 	= data.id;
+            	var _code 	= data.code;
+            	var _desc 	= data.description.trim();
+
+            	if($.inArray(_code, _relList) > -1) {
+            		$.bootstrapGrowl('El articulo ya se encuentra relacionado', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+            		return false;
+            	}
+
+            	var _tr 	= '<tr id="' + _code + '">';
+            		_tr 	+= '	<td class="text-center"><img src="' + url + img_cat + _code + '_tumb.jpg" width="50" height="50" /></td>';
+            		_tr 	+= '	<td>' + _code + '</td>';
+            		_tr 	+= '	<td>' + _desc + '</td>';
+            		_tr 	+= '	<td class="text-center">';
+            		_tr 	+= '		<div class="btn-group">';
+            		_tr 	+= '			<a href="javascript:void(0)" data-toggle="tooltip" title="Eliminar" class="btn btn-xs btn-danger btn-del" id="_a_' + _code + '" data-code="' + _code + '"><i class="fa fa-times"></i></a>';
+            		_tr 	+= '		</div>';
+            		_tr 	+= '	</td>';
+            		_tr 	+= '</tr>';
+
+            	$('tbody', e_table).append(_tr);
+
+            	// Acion para eliminar un elemnto relacional
+            	$('tbody tr td div a[id="_a_' + _code + '"]', e_table).on('click', function() {
+
+            		var _confirm = confirm('Realmente dese eliminar este articulo de la lista de relaciones?');
+
+            		if(_confirm==true) {
+
+            			var _code = $(this).data('code');
+
+	            		_relList.splice(_relList.indexOf(_code), 1);
+
+	            		$.each(_relObjs, function(i, item) {
+	    					if(item.code == _code) {
+	    						_relObjs.splice(_relObjs.indexOf(item), 1);
+	    						return false;
+	    					}
+	    				});
+
+	    				$('tbody tr[id="' + _code + '"]', e_table).remove();
+
+            		}
+
+            	});
+
+            	var relObj = {
+            		'id' 	: _id,
+            		'code'	: _code,
+            		'desc'	: _desc
+            	};
+
+            	_relList.push(_code);
+            	_relObjs.push(relObj);
+
+            	$('#code', '#form-edit-relations').val('');
+            	$(".btn-search-code", e_form).prop('disabled', true);
+            });
+
+			// Dropzeone de actualizacion
+    		var previewNode 		= document.querySelector("#templateUp");
+			previewNode.id 			= "";
+			var previewTemplate 	= previewNode.parentNode.innerHTML;
+			previewNode.parentNode.removeChild(previewNode);
+
+			var _e_dz = new Dropzone("div#e_dropzone",{ // Configuracion inicial de dropzone
+		        url: "/media/image/upload",
+		        dictDefaultMessage: '<i class="fa fa-cloud-upload"></i><p><span>Arrastra tu imagen ó da click.</span></p>',
+		        autoProcessQueue: false,
+		        uploadMultiple: false,
+		        parallelUploads: dropUpLimit, 
+		        maxFiles: dropUpLimit,
+		        maxFilesize: 15, // 15MB
+		        
+		        thumbnailWidth:150,
+        		thumbnailHeight:225,
+        		
+        		previewTemplate: previewTemplate,
+		        previewsContainer: "#previewsUp",
+
+		        dictFileTooBig: 'tb:La imagen es demasiado grande',
+		        acceptedFiles: 'image/jpeg,image/jpg',
+		        dictInvalidFileType: 'uf:Archivo no soportado',
+
+		        maxfilesexceeded: function(file) { // Si se excede el numero de archivos se remueven los que esten agregados de mas de la dropzone
+		            $.bootstrapGrowl('Ha superado el número máximo de imágenes a cargar.', {
+                        type: "danger",
+                        delay: 4500,
+                        allow_dismiss: true
+                    });
+		            this.removeFile(file);
+		        },
+		        error: function(file, response) { // SI existe un error este los mostramos
+		            if($.type(response) === "string") {
+		                var err = response.split(':');
+		                if(err[0]=='tb') {
+		                    $.bootstrapGrowl(file.name + ' ' + err[1], {
+		                        type: "danger",
+		                        delay: 4500,
+		                        allow_dismiss: true
+		                    });
+		                    this.removeFile(file);
+		                } else if(err[0]=='uf') {
+		                    $.bootstrapGrowl(file.name + ' ' + err[1], {
+		                        type: "danger",
+		                        delay: 4500,
+		                        allow_dismiss: true
+		                    });
+		                    this.removeFile(file);
+		                }
+		            }
+		        },
+		        sending: function(file, xhr, formData) { // Se agrega informacion adicional a la carga de imagenes
+
+		        	/*
+		        	var itmHash = CryptoJS.MD5(file.name).toString();
+		        	var isMain 	= false;
+
+		        	$.each(imgToUpObjs, function(i, itm) {
+						if(itm.hash == itmHash) isMain = itm.isMain;
+					});
+
+		        	formData.append('pid', _ppid);
+		        	formData.append('category', _pcat);
+		        	formData.append('code', _pcode);
+		        	formData.append('name', file.name);
+		        	formData.append('hash', itmHash);
+		        	formData.append('is_main', isMain);
+		        	*/
+
+		        },
+		        accept: function(file, done) { // Si la imagen es acpetable se configura la  previsualizacion y sus botones
+
+		        	done();
+
+		        	/*
+		        	var preview = $(file.previewTemplate);
+
+		        	var _qfiles = this.getQueuedFiles();
+
+		        	var _this 	= this;
+
+		        	$.each(_qfiles, function(i, item) {
+
+		        		var itmName = CryptoJS.MD5(item.name).toString();
+		        		var imgData = {  "name" : item.name , "hash" : itmName, 'isMain' : false };
+
+		        		if($.inArray(itmName, imgToUpList)==-1) {
+
+		        			imgToUpObjs.push(imgData);
+		        			imgToUpList.push(itmName);
+
+		        			var btn_pic 		= preview.find('.btn-pic');
+		        			var btn_del 		= preview.find('.btn-del');
+		        			var obj_progress	= preview.find('.progress-object');
+
+		        			packBtnDel.push(btn_del);
+		        			packBtnMain.push(btn_pic);
+
+		        			// Boton de imagen principal
+		        			btn_pic.data('cimg', itmName);
+		        			btn_pic.data('img', item.name);
+
+		        			btn_pic.on('click', function(e){
+
+		        				mainImgName = $(this).data('cimg');
+
+	        					$(this).removeClass('btn-success');
+	        					$(this).addClass('btn-danger');
+
+	        					if(btnImgObject==undefined) btnImgObject = btn_pic;
+	        					else {
+
+	        						btnImgObject.removeClass('btn-danger');
+	        						btnImgObject.addClass('btn-success');
+
+	        						btnImgObject = btn_pic;
+	        					}
+
+	        					$.each(imgToUpObjs, function(i, itm) {
+	        						if(itm.hash == mainImgName) itm.isMain = true;
+	        						else itm.isMain = false;
+	        					});
+
+	        					obj_progress.prop('id', '_p_' + itmName);
+
+		        				e.preventDefault();
+		        				e.stopPropagation();
+		        			});
+
+		        			// Boton de imagen a eliminar
+		        			btn_del.data('cimg', itmName);
+		        			btn_del.data('img', item.name);
+
+		        			btn_del.on('click', function(e){
+
+		        				var imgHash = $(this).data('cimg');
+
+		        				if(mainImgName == imgHash) {
+		        					$.bootstrapGrowl('La imagen principal no puede ser eliminada', {
+				                        type: "danger",
+				                        delay: 4500,
+				                        allow_dismiss: true
+				                    });
+		        					return false;
+		        				}
+
+		        				_this.removeFile(file);
+
+		        				imgToUpList.splice(imgToUpList.indexOf(imgHash), 1);
+
+
+		        				$.each(imgToUpObjs, function(i, oitm) {
+		        					if(oitm.hash == imgHash) {
+		        						imgToUpObjs.splice(imgToUpObjs.indexOf(oitm), 1);
+		        						return false;
+		        					}
+		        				});
+
+		        				e.preventDefault();
+		        				e.stopPropagation();
+		        			});
+		        		}
+
+		        	});
+					*/
+
+		        },
+		        complete: function(file) { // Una ves completada la carga ... [Pendinete]
+
+		        	if(file.status=='error') return;
+
+		        	if (this.getUploadingFiles().length === 0 && this.getQueuedFiles().length === 0) {
+
+		        		// Mensaje de finalizacion de carga de producto
+						$.bootstrapGrowl('Carga de producto exitosa', {
+	                        type: "success",
+	                        delay: 4500,
+	                        allow_dismiss: true
+	                    });
+
+	                    // Ocultamos el modal
+	                    $('#modal-add-product').modal('hide');
+			        }
+
+			        if(file.status=='success') {
+			        	var _data           = $.parseJSON(file.xhr.response);
+						//console.log(_data);
+			        }
+
+		        }
+		    });
 
             // Fix para overmodal
 	        $('#modal-link-color').on('hidden.bs.modal', function(e){
