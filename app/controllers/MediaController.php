@@ -522,7 +522,7 @@ class MediaController extends \BaseController {
 
 	}
 
-	// Funcion para cargar la imagen principal del producto
+	// Funcion para cargar las imagenes del producto
 	public function imageUpload()
 	{
 		// Configuracion de compresion
@@ -662,4 +662,339 @@ class MediaController extends \BaseController {
 	    }
 	}
 
+	// Funcion para cargar imarenes de un producto existente
+	public function imageUploadEdit()
+	{
+		//return Input::all();
+		// Configuracion de compresion
+		$compress_enabled 	= filter_var(Config::get('compress.enable'), FILTER_VALIDATE_BOOLEAN);
+
+		// Configuracion del producto
+		$code 				= Input::get('code');
+		$pid 				= Input::get('pid');
+		$pcat 				= (int)Input::get('category');
+		$hashName 			= Input::get('hash');
+		$isMain 			= filter_var(Input::get('is_main'), FILTER_VALIDATE_BOOLEAN);
+
+		// Archivo e informacion a cargar
+		$file 				= Input::file('file');
+		$extension 			= File::extension($file->getClientOriginalName());
+
+		// Directorios
+		$temp_dir 			= storage_path() . '/tmp/';
+		$public_dir 		= Config::get('btsite.path') . Config::get('btsite.img_catalog');
+
+	    if($isMain) {
+	    	
+	    	$tmp_filename 	=  $code . '_tmp.' . $extension;
+	    	$new_filename 	=  $code . '.' . $extension;
+
+	    	$cat_filename 	=  $code . '_cat.' . $extension;
+	    	$thb_filename 	=  $code . '_tumb.' . $extension;
+	    	$fb_filename 	=  $code . '_fb.' . $extension;
+
+	    } else {
+	    	
+	    	$tmp_filename 	=  $code .'_' . $hashName . '_tmp.' . $extension;
+	    	$new_filename 	=  $code .'_' . $hashName . '.' . $extension;
+	    	
+	    	$sml_filename 	=  $code .'_' . $hashName . '_small.' . $extension;
+	    	$tag_filename 	=  $code .'_' . $hashName . '_tag.' . $extension;
+
+	    }
+
+	    $upload_success = Input::file('file')->move($temp_dir, $tmp_filename);
+
+	    if($upload_success) {
+
+	    	$message_output = "";
+
+	    	if($compress_enabled) {
+
+	    		$compressor = new Compressor(Config::get('compress.api_key'));
+
+	    		try {
+			        
+			        // Comprimimos la imagen cuando el compresos esta activado
+			        $result = $compressor->compress($temp_dir . $tmp_filename);
+			        $result->writeTo($public_dir . $new_filename);
+
+			        if($isMain) {
+
+			        	if($pcat==1) iImage::make($public_dir . $new_filename)->resize(190, 285)->save($public_dir . $cat_filename);
+			        	else iImage::make($public_dir . $new_filename)->resize(190, 210)->save($public_dir . $cat_filename);
+
+			        	iImage::make($public_dir . $new_filename)->resize(50, 50)->save($public_dir . $thb_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(100, 100)->save($public_dir . $fb_filename);
+
+			        } else {
+
+			        	iImage::make($public_dir . $new_filename)->resize(100, 150)->save($public_dir . $sml_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(33, 50)->save($public_dir . $tag_filename);
+			        }
+
+			        File::delete($temp_dir . $tmp_filename);
+
+			        $message_output = 'Imagen cargada y comprimida';
+			    }
+			    catch (AuthorizationException $e) {
+			        return Response::json(array('status' => false, 'message' => '[AuthorizationException] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+			    catch (InputException $e) {
+			        return Response::json(array('status' => false, 'message' => '[InputException] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+			    catch (Exception $e) {
+			        return Response::json(array('status' => false, 'message' => '[Exception] Error de compresion de imagen, Archivo [' . $filename . '], Error [' . $e->getMessage() . ']'));
+			    }
+
+	    	} else {
+
+	    		if(File::move($temp_dir . $tmp_filename, $public_dir . $new_filename)) {
+
+	    			if($isMain) {
+
+	    				if($pcat==1) iImage::make($public_dir . $new_filename)->resize(190, 285)->save($public_dir . $cat_filename);
+				        else iImage::make($public_dir . $new_filename)->resize(190, 210)->save($public_dir . $cat_filename);
+
+				        iImage::make($public_dir . $new_filename)->resize(50, 50)->save($public_dir . $thb_filename);
+				        iImage::make($public_dir . $new_filename)->resize(100, 100)->save($public_dir . $fb_filename);
+
+	    			} else {
+
+	    				iImage::make($public_dir . $new_filename)->resize(100, 150)->save($public_dir . $sml_filename);
+			        	iImage::make($public_dir . $new_filename)->resize(33, 50)->save($public_dir . $tag_filename);
+	    			}
+
+	    			$message_output = 'Imagen cargada y renombrada';
+	    		} else {
+	    			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al cargar y renombrar la imagen'));
+	    		}
+
+	    	}
+
+	    	DB::beginTransaction();
+
+	    	if($isMain) {
+
+	    		$image 				= new Image();
+	    		$image->product_id 	= $pid;
+	    		$image->full 		= $new_filename;
+	    		$image->catalog 	= $cat_filename;
+	    		$image->fb_share 	= $fb_filename;
+	    		$image->thumbnail 	= $thb_filename;
+	    		$image->save();
+
+	    	} else {
+
+	    		$galery 				= new Galery();
+	    		$galery->product_id		= $pid;
+	    		$galery->image 			= $new_filename;
+	    		$galery->image_small 	= $sml_filename;
+	    		$galery->image_tag 		= $tag_filename;
+	    		$galery->save();
+	    	}
+
+	    	DB::commit();
+	    	return Response::json(array('status' => true, 'message' => $message_output));
+
+	    } else {
+	    	DB::rollback();
+	    	return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al cargar la imagen'));
+	    }
+	}
+
+	// Eliminamos la imagen principal y el juego de la misma del producto seleccionado
+	public function imageMainDelete()
+	{
+
+		$product_id 		= Input::get('pid');
+		$img_cat_dir 		= Config::get('btsite.path') . Config::get('btsite.img_catalog');
+
+		// Variables de imagenes
+		$full_image 		= null;
+		$catalog_image 		= null;
+		$fb_image 			= null;
+		$thumbnail_image 	= null;
+
+		try {
+
+			$image 		= Image::where('product_id', $product_id)->first();
+			$product 	= Product::find($product_id);
+
+			if(!$image) {
+
+				if(!$product) return Response::json(array('status' => false, 'message' => 'El codigo de producto no existe'));
+
+				$full_image 		= $img_cat_dir . $product->code . '.jpg';
+				$catalog_image 		= $img_cat_dir . $product->code . '_cat.jpg';
+				$fb_image 			= $img_cat_dir . $product->code . '_tumb.jpg';
+				$thumbnail_image 	= $img_cat_dir . $product->code . '_fb.jpg';
+
+				if(File::exists($full_image)) File::delete($full_image);
+				if(File::exists($catalog_image)) File::delete($catalog_image);
+				if(File::exists($fb_image)) File::delete($fb_image);
+				if(File::exists($thumbnail_image)) File::delete($thumbnail_image);
+
+				return Response::json(array('status' => true, 'message' => 'Imagenes eliminadas'));
+
+			} else {
+
+				// Eliminamos las imagenes en el directorio de catalogo
+				$full_image 		= $img_cat_dir . $image->full;
+				$catalog_image 		= $img_cat_dir . $image->catalog;
+				$fb_image 			= $img_cat_dir . $image->fb_share;
+				$thumbnail_image 	= $img_cat_dir . $image->thumbnail;
+
+				if(File::exists($full_image)) File::delete($full_image);
+				if(File::exists($catalog_image)) File::delete($catalog_image);
+				if(File::exists($fb_image)) File::delete($fb_image);
+				if(File::exists($thumbnail_image)) File::delete($thumbnail_image);
+
+				if(!$image->delete()) return Response::json(array('status' => false, 'message' => 'La imagen no pudo ser eliminada de la base de datos, sin embargo las imagenes ya no existen'));
+
+			}
+
+			$product->status = 0;
+
+			$product->save();
+
+			return Response::json(array('status' => true, 'message' => 'Imagen localizada', 'image' => $image));
+			
+		} catch (Exception $e) {
+			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al eliminar la imagen del sistema [' . $e->getMessage() . ']'));
+		}
+
+	}
+
+	// Eliminamos una imaen de la galeria
+	public function imageGaleryDelete()
+	{
+		$gid 			= Input::get('gid');
+		$img_cat_dir 	= Config::get('btsite.path') . Config::get('btsite.img_catalog');
+
+		try {
+
+			$galery = Galery::find($gid);
+
+			if(!$galery) return Response::json(array('status' => false, 'message' => 'La galeria no gue encontrada'));
+
+			// Imagenes de galeria adicional
+			$full_image 		= $img_cat_dir . $galery->image;
+			$small_image 		= $img_cat_dir . $galery->image_small;
+			$tag_image 			= $img_cat_dir . $galery->image_tag;
+
+			if(File::exists($full_image)) File::delete($full_image);
+			if(File::exists($small_image)) File::delete($small_image);
+			if(File::exists($tag_image)) File::delete($tag_image);
+
+			if(!$galery->delete()) return Response::json(array('status' => false, 'message' => 'La imagen de galeria, sin embargo la imagen si fue eliminada del sistema.'));
+
+			return Response::json(array('status' => true, 'message' => 'La imagen de galeria fue eliminada del sistema'));
+			
+		} catch (Exception $e) {
+			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al tratar de eliminar la imagen de la galeria [ ' . $e->getMessage() . ']'));
+		}
+	}
+
+	// Remplazamos una imagen de la galeria a la imagen main
+	public function imageGaleryReplace()
+	{
+		$gid 				= Input::get('gid');
+		$pid 				= Input::get('pid');
+		$img_cat_dir 		= Config::get('btsite.path') . Config::get('btsite.img_catalog');
+		$seed 				= rand(100, 999);
+		
+		try {
+			
+			$galery 		= Galery::find($gid);
+			$image 			= Image::where('product_id',$pid)->first();
+
+			if(!$galery) return Response::json(array('status' => false, 'message' => 'Imagen de galeria no encontrada'));
+
+			$product 		= Product::find($pid);
+			$code 			= $product->code;
+			$cat 			= $product->category_id;
+
+			// Imagenes de galeria adicional
+			$full_image 	= $img_cat_dir . $galery->image;
+			$small_image 	= $img_cat_dir . $galery->image_small;
+			$tag_image 		= $img_cat_dir . $galery->image_tag;
+
+			// Nuevo juego de imagenes
+			$new_image 		= $img_cat_dir . $code . '.jpg';
+			$new_cat_image 	= $img_cat_dir . $code . '_cat.jpg';
+			$new_tumb_image = $img_cat_dir . $code . '_tumb.jpg';
+			$new_fb_image 	= $img_cat_dir . $code . '_fb.jpg';
+
+			// Si existe la imagen la re-acomodamos
+			$mainImage 		= $img_cat_dir . $code . '.jpg';
+
+			$gi_name 		= $code . '_' . md5($code . $seed) . '.jpg';
+			$gi_small		= $code . '_' . md5($code . $seed) . '_small.jpg';
+			$gi_tag 		= $code . '_' . md5($code . $seed) . '_tag.jpg';
+
+			$toGaleryImage 	= $img_cat_dir . $gi_name;
+			$toGaleryImageS = $img_cat_dir . $gi_small;
+			$toGaleryImageT = $img_cat_dir . $gi_tag;
+			
+			if(File::exists($mainImage)) {
+
+				File::move($mainImage, $toGaleryImage);
+				iImage::make($toGaleryImage)->resize(100, 150)->save($toGaleryImageS);
+		        iImage::make($toGaleryImage)->resize(33, 50)->save($toGaleryImageT);
+			}
+
+			// Renombramos la imagen con el codigo del producto
+			if(!File::move($full_image, $new_image)) return Response::json(array('status' => false, 'message' => 'No fue posible generar la nueva imagen main'));
+
+			if($cat==1) iImage::make($new_image)->resize(190, 285)->save($new_cat_image);
+	        else iImage::make($new_image)->resize(190, 210)->save($new_cat_image);
+
+	        iImage::make($new_image)->resize(50, 50)->save($new_tumb_image);
+	        iImage::make($new_image)->resize(100, 100)->save($new_fb_image);
+
+	        // Eliminamos las viejas imagenes de la galeria
+	        File::delete($small_image);
+	        File::delete($tag_image);
+
+	        if($image) {
+
+	        	$galery->image 			= $gi_name;
+		        $galery->image_small 	= $gi_small;
+		        $galery->image_tag 		= $gi_tag;
+
+		        if(!$galery->save()) return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al remplazar la imagen de la galeria'));
+	        
+	        } else $galery->delete();
+
+	        if($image) $image->touch();
+	        else {
+
+	        	$image 				= new Image();
+	        	$image->product_id 	= $pid;
+	        	$image->full 		= $code . '.jpg';
+	        	$image->catalog 	= $code . '_cat.jpg';
+	        	$image->fb_share 	= $code . '_fb.jpg';
+	        	$image->thumbnail 	= $code . '_tumb.jpg';
+
+	        	if(!$image->save()) return Response::json(array('status' => false, 'message' => 'La imagen no pudo ser guardada, pero las imagenes se han remplazado'));
+
+	        }
+
+	        return Response::json(array('status' => true, 'message' => 'Imagen remplazada'));
+
+		} catch (Exception $e) {
+			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al remplazar la imagen [' . $e->getMessage() . ']'));
+		}
+	}
+
 }
+
+
+
+
+
+
+
+
+

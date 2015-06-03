@@ -481,28 +481,28 @@
                             <form action="#" method="post" class="form-horizontal form-bordered" id="form-extras" name="form-extras" onsubmit="return false;">
 
                                 <div class="form-group">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label for="materials">Materiales</label>
                                         <select id="materials" name="materials" class="form-control" size="5" multiple>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label for="sizes">Tallas</label>
                                         <select id="sizes" name="sizes" class="form-control" size="5" multiple>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="colors">Colores</label>
+                                        <select id="colors" name="colors" class="form-control" size="5" multiple>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <div class="col-md-3">
-                                        <label for="colors">Colores</label>
-                                        <select id="colors" name="colors" class="form-control" size="5">
-                                        </select>
-                                    </div>
                                     <div class="col-md-1 text-center btn-vc">
                                         <button class="btn btn-xs btn-default btn-color-link"><i class="hi hi-log_in"></i></button>
                                     </div>
-                                    <div class="col-md-8">
+                                    <div class="col-md-11">
                                         <label for="link-color">Colores & Codigo</label>
                                         <select id="link-color" name="link-color" class="form-control" size="5" readonly>
                                         </select>
@@ -540,7 +540,7 @@
                 <div class="modal-body">
 
                     <!-- Default Tabs -->
-                    <ul class="nav nav-tabs push" data-toggle="tabs">
+                    <ul class="nav nav-tabs push navup" data-toggle="tabs">
                         <li class="active"><a href="#e_images">Imagenes</a></li>
                         <li><a href="#e_detail">Detalle</a></li>
                         <li><a href="#e_relations">Relacion</a></li>
@@ -554,17 +554,6 @@
 
                             <div class="row">
                                 <div class="col-md-12" id="existing-images">
-
-                                    <div id="_templateUp" class="galery-up-file">
-                                        <div><span class="preview"><img class="img-responsive center-block" /></span></div>
-                                        <div>
-                                            <div class="btn-group"> <!-- data-dz-remove  -->
-                                                <button class="btn btn-xs btn-default btn-del" type="button"><i class="gi gi-bin"></i> Eliminar</button>
-                                                <button class="btn btn-xs btn-success btn-pic" type="button"><i class="gi gi-heart"></i> Principal</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
                             </div>
                             
@@ -578,7 +567,7 @@
 
                                 <div class="col-md-12" id="previewsUp">
 
-                                    <div id="templateUp" class="galery-up-file">
+                                    <div id="templateUp" class="galery-edit-file">
                                         <div><span class="preview"><img data-dz-thumbnail class="img-responsive center-block" /></span></div>                               
                                         <div>
                                             <!-- <p class="name" data-dz-name></p> -->
@@ -588,12 +577,6 @@
                                             <span class="size" data-dz-size></span>
                                             <div class="progress progress-striped active" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                                                 <div class="progress-bar progress-bar-success progress-object" style="width:0%;" data-dz-uploadprogress></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div class="btn-group"> <!-- data-dz-remove  -->
-                                                <button class="btn btn-xs btn-default btn-del" type="button"><i class="gi gi-bin"></i> Eliminar</button>
-                                                <button class="btn btn-xs btn-success btn-pic" type="button"><i class="gi gi-heart"></i> Principal</button>
                                             </div>
                                         </div>
                                     </div>
@@ -612,7 +595,7 @@
                                 <div class="form-group">
                                     <label class="col-md-2 control-label" for="code">Codigo</label>
                                     <div class="col-md-3">
-                                        <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto..">
+                                        <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto.." readonly>
                                     </div>
                                     <label class="col-md-2 control-label" for="stock">Stock</label>
                                     <div class="col-md-2">
@@ -818,33 +801,33 @@
                             <!-- END Basic Form Elements Content -->
                         </div>
 
-                        <!-- Materials -->
+                        <!-- Materials/Sizes/Colors -->
                         <div class="tab-pane" id="e_extras">
                             <form action="#" method="post" class="form-horizontal form-bordered" id="form-edit-extras" name="form-edit-extras" onsubmit="return false;">
 
                                 <div class="form-group">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label for="e-materials">Materiales</label>
                                         <select id="e-materials" name="e-materials" class="form-control" size="5" multiple>
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label for="e-sizes">Tallas</label>
                                         <select id="e-sizes" name="e-sizes" class="form-control" size="5" multiple>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="e-colors">Colores</label>
+                                        <select id="e-colors" name="e-colors" class="form-control" size="5" multiple>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <div class="col-md-3">
-                                        <label for="e-colors">Colores</label>
-                                        <select id="e-colors" name="e-colors" class="form-control" size="5">
-                                        </select>
-                                    </div>
                                     <div class="col-md-1 text-center btn-vc">
-                                        <button class="btn btn-xs btn-default btn-color-link"><i class="hi hi-log_in"></i></button>
+                                        <button class="btn btn-xs btn-default btn-edit-color-link"><i class="hi hi-log_in"></i></button>
                                     </div>
-                                    <div class="col-md-8">
+                                    <div class="col-md-11">
                                         <label for="e-link-color">Colores & Codigo</label>
                                         <select id="e-link-color" name="e-link-color" class="form-control" size="5" readonly>
                                         </select>
@@ -1003,8 +986,13 @@
                 <div class="modal-body">
                     <form action="#" method="post" class="form-horizontal form-bordered" id="form-link-color" name="form-link-color" onsubmit="return false;">
                         <div class="form-group">
+                            <div class="col-md-3">
+                                <label for="lcolors">Colores</label>
+                                <select id="lcolors" name="lcolors" class="form-control" size="5">
+                                </select>
+                            </div>
                             <label class="col-md-2 control-label" for="code">Codigo</label>
-                            <div class="col-md-10">
+                            <div class="col-md-7">
                                 <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto.." autocomplete="off">
                             </div>
                         </div>
@@ -1014,6 +1002,43 @@
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-sm btn-default btn-select">Seleccionar</button>
+                    <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Link Color -->
+
+    <!-- Edit Link Color -->
+    <div id="modal-edit-link-color" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header text-center">
+                    <!-- <h2 class="modal-title">Categorias</h2> -->
+                </div>
+                <!-- END Modal Header -->
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <form action="#" method="post" class="form-horizontal form-bordered" id="form-edit-link-color" name="form-edit-link-color" onsubmit="return false;">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                <label for="l-e-colors">Colores</label>
+                                <select id="l-e-colors" name="l-e-colors" class="form-control" size="5">
+                                </select>
+                            </div>
+                            <div class="col-md-9">
+                                <label for="code">Codigo</label>
+                                <input type="text" id="code" name="code" class="form-control" placeholder="Codigo de producto.." autocomplete="off">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!-- END Modal Body -->
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-default btn-edit-select">Seleccionar</button>
                     <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>

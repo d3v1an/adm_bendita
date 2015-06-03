@@ -21,7 +21,7 @@ class Product extends \Eloquent {
         return $this->belongsToMany('SubCategory');
     }
 
-    // Colores [CHECK]
+    // Colores
     public function colors()
     {
         return $this->belongsToMany('Color');
@@ -33,7 +33,7 @@ class Product extends \Eloquent {
         return $this->belongsToMany('Material');
     }
 
-    // Imagen principal [CHECK]
+    // Imagen principal
     public function image()
     {
         return $this->hasOne("Image");

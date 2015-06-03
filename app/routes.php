@@ -14,20 +14,13 @@
 // Test
 Route::get('/test', function()
 {
-    $product = Product::with(array(
-                'category',
-                'sub_category',
-                'sub_categories',
-                'materials',
-                'galery',
-                'sizes',
-                'products',
-                'link',
-                'link_colors'
-            ))
-            ->whereIn('id',array(1456,1455,1454,1453,1452,1451,1450,1449,1448,1447,1170))->get();
+    //$test = Product::with('colors')->where('id', 825)->first();
+    $p = Product::find(1455);
+    $p->colors()->sync(array(1,2,3,6));
 
-    return $product;
+    $test = Product::with('colors')->where('id', 1455)->first();
+
+    return $test;
 });
 
 // Test
@@ -135,6 +128,18 @@ Route::group(array('before' => 'auth.cp'), function()
 
         // Carga de imagen
         Route::post('media/image/upload', 'MediaController@imageUpload');
+
+        // Eliminamos el grupo de imagenes que son la principal para el producto
+        Route::post('media/image/main/delete', 'MediaController@imageMainDelete');
+
+        // Eliminamos una imagen de la galeria
+        Route::post('media/image/galery/delete', 'MediaController@imageGaleryDelete');
+
+        // Remplazamos la imagen de la galeria a la imagen main
+        Route::post('media/image/galery/replace', 'MediaController@imageGaleryReplace');
+
+        // Carga de imagen con edicion de producto
+        Route::post('media/image/upload/edit', 'MediaController@imageUploadEdit');
 
 
     // Reporte de email's enviados a los clientes
@@ -253,6 +258,9 @@ Route::group(array('before' => 'auth.cp'), function()
 
         // Agregamos un producto nuevo
         Route::post('products/inventory/add', 'InventoryController@productAdd');
+
+        // Agregamos un producto nuevo
+        Route::post('products/inventory/edit', 'InventoryController@productEdit');
 
         // Obtenemos el tipo de cambio
         Route::post('products/inventory/type_change', 'InventoryController@typeCgange');

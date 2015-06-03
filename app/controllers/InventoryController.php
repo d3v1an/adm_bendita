@@ -162,13 +162,14 @@ class InventoryController extends \BaseController {
 		$products_related 			= explode(',',Input::get('r_products'));
 		$materials 					= explode(',',Input::get('e_materials'));
 		$sizes 						= explode(',',Input::get('e_sizes'));
+		$colors 					= explode(',',Input::get('e_colors'));
 		$item_colors 				= explode(',',Input::get('e_item_color'));
 
 		try {
 
 			DB::beginTransaction();
 			
-			$product = new Product();
+			$product 							= new Product();
 
 			$product->category_id 				= $category_id;
 			$product->sub_category_id 			= $sub_category_id;
@@ -223,6 +224,9 @@ class InventoryController extends \BaseController {
 			// Tallas relacionadas al prdoducto insertado
 			if(count($sizes) > 0) $product->sizes()->sync($sizes);
 
+			// Colores relacionados al prdoducto insertado
+			if(count($colors) > 0) $product->colors()->sync($colors);
+
 			// Aqui agregamos la relacion de Color/Producto a Producto
 			$pcolors_ids = array();
 
@@ -257,6 +261,137 @@ class InventoryController extends \BaseController {
 			return Response::json(array('status' => false, 'message' => 'Ocurrio un error al guardar el producto en el sistema [' . $e->getMessage() . ']'));
 		}
 
+	}
+
+	// Modificacion de un producto existente
+	public function productEdit()
+	{
+
+		$pid 						= Input::get('d_id');
+		$category_id 				= Input::get('d_category_id');
+		$sub_category_id 			= Input::get('d_sub_category_id');
+		$code 						= Input::get('d_code');
+		$price_public 				= Input::get('d_price_public');
+		$price_public_usd 			= Input::get('d_price_public_usd');
+		$price_half_wholesale 		= Input::get('d_price_half_wholesale');
+		$price_half_wholesale_usd 	= Input::get('d_price_half_wholesale_usd');
+		$price_wholesale 			= Input::get('d_price_wholesale');
+		$price_wholesale_usd 		= Input::get('d_price_wholesale_usd');
+		$price_dealer 				= Input::get('d_price_dealer');
+		$price_dealer_usd 			= Input::get('d_price_dealer_usd');
+		$description 				= Input::get('d_title');
+		$description_eng 			= Input::get('d_title_eng');
+		$detail 					= Input::get('d_description');
+		$detail_eng 				= Input::get('d_description_eng');
+		$gender 					= Input::get('d_gender');
+		$stock 						= Input::get('d_stock');
+		$minimal_stock 				= 0;
+		$multi_sub_categories 		= explode(',',Input::get('d_multi_category'));
+		$products_related 			= explode(',',Input::get('r_products'));
+		$materials 					= explode(',',Input::get('e_materials'));
+		$sizes 						= explode(',',Input::get('e_sizes'));
+		$colors 					= explode(',',Input::get('e_colors'));
+		$item_colors 				= explode(',',Input::get('e_item_color'));
+
+		try {
+
+			DB::beginTransaction();
+
+			$product 							= Product::find($pid);
+
+			if(!$product) return Response::json(array('status' => false, 'message' => 'Producto no localizado'));
+
+			$product->category_id 				= $category_id;
+			$product->sub_category_id 			= $sub_category_id;
+			$product->code 						= $code;
+			$product->price_public 				= $price_public;
+			$product->price_public_usd 			= $price_public_usd;
+			$product->price_half_wholesale 		= $price_half_wholesale;
+			$product->price_half_wholesale_usd 	= $price_half_wholesale_usd;
+			$product->price_wholesale 			= $price_wholesale;
+			$product->price_wholesale_usd 		= $price_wholesale_usd;
+			$product->price_dealer 				= $price_dealer;
+			$product->price_dealer_usd 			= $price_dealer_usd;
+			$product->description 				= $description;
+			$product->description_en 			= $description_eng;
+			$product->detail 					= $detail;
+			$product->detail_en 				= $detail_eng;
+			$product->gender 					= $gender;
+			$product->stock 					= $stock;
+			$product->minimal_stock 			= $minimal_stock;
+
+			if(!$product->save()) return Response::json(array('status' => false, 'message' => 'El producto no pudo ser guardado en el sistema, intentelo nuevamente.'));
+			
+			// Se modifican las multiples sub-categorias cuendo estas existen
+			if(count($multi_sub_categories) > 0) $product->sub_categories()->sync($multi_sub_categories);
+
+			// Relacion con otros productos
+			// Buscamos si existen ya productos relacionados a este
+			$rel_products 						= ProductProduct::where('product_id',$pid)->get();
+
+			if($rel_products->count() > 0) {
+				$ids_to_delete = array();
+				foreach ($rel_products as $r) {
+					array_push($ids_to_delete, $r->id);
+				}
+				ProductProduct::destroy($ids_to_delete);
+			}
+
+			if(count($products_related) > 0) {
+
+				for ($i=0; $i < count($products_related); $i++) { 
+					$p 							= new ProductProduct();
+					$p->product_id 				= $pid;
+					$p->relational_product_id 	= $products_related[$i];
+					$p->save();
+				}
+			}
+
+			// Materiales relacionados al prdoducto insertado
+			if(count($materials) > 0) $product->materials()->sync($materials);
+
+			// Tallas relacionadas al prdoducto insertado
+			if(count($sizes) > 0) $product->sizes()->sync($sizes);
+
+			// Colores relacionados al prdoducto insertado
+			if(count($colors) > 0) $product->colors()->sync($colors);
+
+			// Aqui agregamos la relacion de Color/Producto a Producto
+			// Buscamos y destruimos primero las relaciones existentes de colores y productos
+			$tf_pcolor 	= Pcolor::where('product_id', $pid)->get();
+
+			if(count($tf_pcolor) > 0) {
+				$ids_to_delete = array();
+				foreach ($tf_pcolor as $r) {
+					array_push($ids_to_delete, $r->id);
+				}
+				Pcolor::destroy($ids_to_delete);
+			}
+
+			// Agregamos la nueva relacion de colores
+			$pcolors_ids = array();
+
+			if(count($item_colors) > 0) {
+				for ($i=0; $i < count($item_colors); $i++) { 
+					$pc 				= explode('|',$item_colors[$i]);
+					$_color 			= $pc[0];
+					$_product 			= $pc[1];
+					$pcolor 			= new Pcolor();
+					$pcolor->color_id 	= $_color;
+					$pcolor->product_id = $_product;
+					if($pcolor->save()) array_push($pcolors_ids, $pcolor->id);
+				}
+			}
+
+			if(count($pcolors_ids) > 0) $product->link_colors()->sync($pcolors_ids);
+
+			DB::commit();
+			return Response::json(array('status' => true, 'message' => 'El producto fue actualizado correctamente.', 'pid' => $pid));
+
+		} catch (Exception $e) {
+			DB::rollback();
+			return Response::json(array('status' => false, 'message' => 'Ocurrio un error al actualizar el producto [' . $e->getMessage() . ']'));
+		}
 	}
 
 	// Actualizamos el estatus de un producto
@@ -294,6 +429,8 @@ class InventoryController extends \BaseController {
 			                'sub_category',
 			                'sub_categories',
 			                'materials',
+			                'colors',
+			                'image',
 			                'galery',
 			                'sizes',
 			                'products' => function($query){
@@ -309,7 +446,38 @@ class InventoryController extends \BaseController {
 
 			if(!$product) return Response::json(array('status' => false, 'message' => 'El articulo no pudo ser localizado'));
 
-			return Response::json(array('status' => true, 'message' => 'Articulo localizado', 'product' => $product));
+			// Verificamos si la imagen existe en la db, si no existe en la db pero si existe la
+			// imagen en el directorio la ligamos
+			$image 				= Image::where('product_id', $id)->first();
+
+			$mainImageExists 	= true;
+
+			if(!$image) {
+
+				$path = Config::get('btsite.path') . Config::get('btsite.img_catalog');
+				$code = $product->code;
+				$img  = $path . $code . '.jpg';
+
+				if(File::exists($img)) {
+
+					$full 				= $img;
+					$cat 				= $path . $code . '_cat.jpg';
+					$fb 				= $path . $code . '_fb.jpg';
+					$thumb 				= $path . $code . '_tumb.jpg';
+
+					$nimg 				= new Image();
+					$nimg->product_id 	= $id;
+					$nimg->full 		= $code . '.jpg';
+					$nimg->catalog 		= $code . '_cat.jpg';
+					$nimg->fb_share 	= $code . '_fb.jpg';
+					$nimg->thumbnail 	= $code . '_tumb.jpg';
+
+					$nimg->save();
+
+				} else $mainImageExists = false;
+			}
+
+			return Response::json(array('status' => true, 'message' => 'Articulo localizado', 'main_image' =>  $mainImageExists, 'product' => $product));
 
 		} catch (Exception $e) {
 			return Response::json(array('status' => false, 'message' => 'Ocurrio un problema al actualizar el articulo [' . $e->getMessage() . ']'));

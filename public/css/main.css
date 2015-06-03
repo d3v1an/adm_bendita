@@ -3991,16 +3991,19 @@ a.notelink:hover {
     height: 50px!important;
 }*/
 
-.galery-up-file {
+.galery-up-file,
+.galery-edit-file {
     width: 161px;
     float: left;
     margin: 5px;
 }
-.galery-up-file img.uploaded {
+.galery-up-file img.uploaded,
+.galery-edit-file img.uploaded {
     width: 190px;
     height: 285px;
 }
-.galery-up-file .progress {
+.galery-up-file .progress,
+.galery-edit-file .progress {
     margin-bottom: 5px!important;
 }
 
